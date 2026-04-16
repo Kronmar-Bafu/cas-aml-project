@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Large data files
+*.parquet
+*.zarr/
+data/
+
+# Environment-specific config (contains S3 bucket names)
+config.py
+
+# SageMaker / IDE
+.libs.json
+.virtual_documents/
+
+# OS
+.DS_Store
