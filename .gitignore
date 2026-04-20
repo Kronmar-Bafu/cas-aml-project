@@ -19,3 +19,9 @@ config.py
 
 # OS
 .DS_Store
+
+
+# Generated plots
+som_plots/
+
+.tmp/

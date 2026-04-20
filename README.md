@@ -12,11 +12,18 @@ Based on the GNN-SDM framework by [Wu et al. (2025)](https://doi.org/10.1111/geb
 | `01_geographic_features.ipynb` | DEM, terrain derivatives (slope, aspect, TWI, curvature), ESA Worldcover land-cover fractions |
 | `02_climatological_features.ipynb` | Raw CHELSA download + bioclimatic variables (Bio1, Bio4, Bio12, Bio15, Bio18) |
 | `03_biological_features.ipynb` | Canopy height, NDVI, Human Footprint Index, forest-edge distance |
-| `04_quality_check.ipynb` | Visual QC of all 20 predictor layers for selected regions |
+| `04_quality_check.ipynb` | Visual QC of all predictor layers for selected regions |
 
-## Features (20 total)
+### ML Pipeline
 
-**Terrain** (30 m native): elevation, slope, aspect, TWI, profile curvature, plan curvature
+| Notebook | Description |
+|---|---|
+| `06_combine_features.ipynb` | Preprocess (aspect sin/cos, curvature smoothing) and export combined feature stack |
+| `10_som_clustering.ipynb` | SOM landscape patch clustering (somoclu) |
+
+## Features (21 total)
+
+**Terrain** (30 m native): elevation, slope, aspect (sin/cos), TWI, profile curvature (smoothed), plan curvature (smoothed)
 
 **Land cover** (10 m → 30 m): tree cover, grassland, cropland, built-up, snow/ice, water (as fractions)
 
