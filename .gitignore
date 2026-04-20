@@ -25,3 +25,10 @@ config.py
 som_plots/
 
 .tmp/
+
+
+# Model artifacts and intermediate outputs (stay local)
+*.npy
+*.pkl
+*.index
+selected_features.json
