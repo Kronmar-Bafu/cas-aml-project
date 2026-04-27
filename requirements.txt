@@ -1,0 +1,32 @@
+# Core geospatial
+rioxarray
+rasterio
+xarray
+s3fs
+boto3
+duckdb
+pyarrow
+
+# ML / SOM
+scikit-learn
+somoclu
+minisom
+faiss-cpu
+
+# GNN
+torch
+torch-geometric
+
+# Hydrology
+pysheds
+
+# Visualization
+matplotlib
+cartopy
+seaborn
+
+# General
+numpy
+pandas
+scipy
+networkx

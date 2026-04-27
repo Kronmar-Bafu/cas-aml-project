@@ -31,4 +31,5 @@ som_plots/
 *.npy
 *.pkl
 *.index
+*.csv
 selected_features.json
