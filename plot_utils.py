@@ -103,7 +103,25 @@ def plot_roi(layers, roi, *, suptitle="", cols=4, figsize_per_panel=(5, 4)):
 
 def plot_bio_from_zarr(s3_path, var_name, title, *, s3=None, cmap="YlGnBu", unit="mm"):
     """
-    Plot a 30 m bioclimatic variable stored as Zarr on S3.
+    Plot a bioclimatic variable directly from a Zarr store on S3.
+
+    Loads the variable lazily and plots it on a cartopy map with borders,
+    lakes, and rivers. Uses robust color scaling to handle outliers.
+
+    Parameters
+    ----------
+    s3_path : str
+        S3 path to the Zarr store (e.g. "s3://bucket/chelsa/bio1_30m.zarr").
+    var_name : str
+        Variable name inside the Zarr Dataset.
+    title : str
+        Plot title.
+    s3 : s3fs.S3FileSystem | None
+        Optional pre-configured filesystem.
+    cmap : str
+        Matplotlib colormap name.
+    unit : str
+        Unit label for the colorbar.
     """
     s3 = s3 or s3fs.S3FileSystem(anon=False)
     store = s3fs.S3Map(root=s3_path, s3=s3, check=False)
@@ -134,8 +152,19 @@ def plot_landcover_fractions(lc_data, cols=3, step=20):
     """
     Plot land-cover fraction maps for every class in *lc_data*.
 
-    Downsamples by *step* (default every 20th pixel) to avoid OOM
-    during rendering at full 30 m resolution.
+    Creates a grid of maps, one per land-cover class on the ``band``
+    dimension. Each map shows the fraction [0, 1] of that class within
+    each 30 m cell. Downsampled by *step* to avoid OOM.
+
+    Parameters
+    ----------
+    lc_data : xarray.DataArray
+        Must have a ``band`` dimension with class names as coordinates,
+        and ``y``, ``x`` spatial dimensions. Values in [0, 1].
+    cols : int
+        Number of columns in the subplot grid.
+    step : int
+        Downsample factor (every Nth pixel rendered).
     """
     import math
 
