@@ -63,13 +63,14 @@ def train_gnn_species(
     epochs=500,
     lr=0.001,
     patience=50,
+    background="random",
     return_history=False,
 ):
     """
     Train GNN-SDM for one species with early stopping.
 
     Pipeline:
-    1. Select background patches via One-Class SVM (most dissimilar to presence)
+    1. Select background patches (random or OC-SVM)
     2. Weight presence patches by PageRank (structural importance)
     3. Train with weighted MSE loss, 80/20 train/val split
     4. Early stopping if val AUC doesn't improve for *patience* epochs
@@ -99,6 +100,10 @@ def train_gnn_species(
         Learning rate for Adam optimizer.
     patience : int
         Early stopping patience (in epochs, checked every 10).
+    background : str
+        Background selection strategy:
+        - "random": random pseudo-absences (same as RF baseline, fair comparison)
+        - "ocsvm": One-Class SVM (paper's method, selects most dissimilar patches)
     return_history : bool
         If True, also return training history list.
 
@@ -113,16 +118,21 @@ def train_gnn_species(
     """
     presence = np.array(list(presence_patches))
     n_pres = len(presence)
-
-    # Background selection via One-Class SVM
-    X_np = X.cpu().numpy()
-    oc_svm = OneClassSVM(kernel='rbf', gamma='scale', nu=0.1)
-    oc_svm.fit(X_np[presence])
-
     non_presence = np.setdiff1d(np.arange(n_patches), presence)
-    scores = oc_svm.decision_function(X_np[non_presence])
-    n_bg = min(len(non_presence), n_pres * 2)
-    bg_idx = non_presence[np.argsort(scores)[:n_bg]]
+    n_bg = min(len(non_presence), n_pres * 3)
+
+    # Background selection
+    rng = np.random.default_rng(42)
+    if background == "ocsvm":
+        X_np = X.cpu().numpy()
+        oc_svm = OneClassSVM(kernel='rbf', gamma='scale', nu=0.1)
+        oc_svm.fit(X_np[presence])
+        scores = oc_svm.decision_function(X_np[non_presence])
+        bg_idx = non_presence[np.argsort(scores)[:n_bg]]
+    elif background == "random":
+        bg_idx = rng.choice(non_presence, n_bg, replace=False)
+    else:
+        raise ValueError(f"Unknown background strategy: {background}")
 
     # Labels and PageRank weights
     labels = torch.zeros(n_patches, dtype=torch.float32)
@@ -134,7 +144,6 @@ def train_gnn_species(
 
     # Train/val split
     labelled = np.concatenate([presence, bg_idx])
-    rng = np.random.default_rng(42)
     rng.shuffle(labelled)
     split = int(0.8 * len(labelled))
     train_mask = torch.zeros(n_patches, dtype=torch.bool, device=device)

@@ -1,0 +1,83 @@
+\documentclass[11pt,a4paper]{article}
+
+% --- Encoding & fonts ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+% --- Page geometry ---
+\usepackage[margin=2.5cm]{geometry}
+
+% --- Language ---
+\usepackage[english]{babel}
+
+% --- Graphics & figures ---
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{subcaption}   % side-by-side figures
+\usepackage{float}        % [H] placement
+
+% --- Tables ---
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+
+% --- Math ---
+\usepackage{amsmath,amssymb}
+
+% --- Bibliography ---
+\usepackage[backend=biber,style=authoryear,maxcitenames=2,natbib=true]{biblatex}
+\addbibresource{references.bib}
+
+% --- Hyperlinks & cross-references ---
+\usepackage[colorlinks=true,linkcolor=blue!60!black,citecolor=green!50!black,urlcolor=blue!70!black]{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
+
+% --- Code listings (optional, for appendix) ---
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\small,breaklines=true}
+
+% --- Misc ---
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage[section]{placeins}  % keep floats within their section
+
+% --- Title ---
+\title{GNN-SDM: Species Distribution Modelling with Graph Neural Networks for Swiss Flora at 30\,m Resolution}
+\author{
+  Kevin M\"uller \\
+  \texttt{kevin.mueller@example.ch}
+}
+\date{\today}
+
+% =============================================================================
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+Traditional species distribution models treat occurrences as independent points, ignoring the spatial structure of landscapes that governs habitat connectivity and species dispersal. We adapt the GNN-SDM framework \citep{Wu2025} to Swiss vascular plants at 30\,m resolution, constructing a landscape graph of 166,464 patches linked by 465,833 adjacency edges. Using a GraphSAGE architecture tuned for flora, we model habitat suitability for 3,751 species and compare against a Random Forest baseline. [Results summary to be added.]
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+% --- Sections in separate files for manageability ---
+\input{sections/01_introduction}
+\input{sections/02_data}
+\input{sections/03_methods}
+\input{sections/04_results}
+\input{sections/05_discussion}
+\input{sections/06_conclusion}
+
+% --- References ---
+\newpage
+\printbibliography
+
+% --- Appendix (optional) ---
+% \appendix
+% \input{sections/appendix}
+
+\end{document}

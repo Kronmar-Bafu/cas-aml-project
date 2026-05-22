@@ -1,0 +1,100 @@
+\section{Data and Study Area}
+\label{sec:data}
+
+\subsection{Study Area}
+\label{sec:study-area}
+
+The study area encompasses the entirety of Switzerland and a surrounding buffer zone, defined by the spatial extent of the CHELSAch high-resolution climate dataset \citep{CHELSAch}. The bounding box spans from 45.57°\,N to 48.07°\,N latitude and 5.72°\,E to 10.66°\,E longitude, covering approximately 41,400\,km\textsuperscript{2} of land area. This extent includes a border buffer of roughly 10\,km into neighbouring countries to avoid edge effects in spatial analyses such as flow accumulation and neighbourhood-based feature computation.
+
+All environmental layers are aligned to a common 30\,m master grid derived from the Copernicus GLO-30 Digital Elevation Model \citep{CopernicusDEM}, projected in geographic coordinates (EPSG:4326). Switzerland's topography ranges from 193\,m (Lake Maggiore) to 4,634\,m (Dufourspitze), creating steep environmental gradients over short distances---a property that motivates the use of high-resolution modelling.
+
+\subsection{Environmental Features}
+\label{sec:features}
+
+We compiled 21 candidate environmental features from four thematic groups (\cref{tab:features}): terrain, land cover, climate, and biological/anthropogenic variables. All layers were processed to the 30\,m master grid using source-appropriate resampling methods.
+
+\begin{table}[htbp]
+\centering
+\caption{Environmental predictor variables compiled for the study. All layers are aligned to the 30\,m master grid. The 12 features selected for modelling (after feature selection, \cref{sec:feature-selection}) are marked with~$\bullet$.}
+\label{tab:features}
+\small
+\begin{tabularx}{\textwidth}{llXll}
+\toprule
+\textbf{Group} & \textbf{Feature} & \textbf{Source} & \textbf{Native res.} & \textbf{Sel.} \\
+\midrule
+\multirow{7}{*}{Terrain}
+ & Elevation & Copernicus GLO-30 DEM & 30\,m & $\bullet$ \\
+ & Slope & Derived from DEM & 30\,m & $\bullet$ \\
+ & Aspect (sin, cos) & Derived from DEM & 30\,m & $\bullet$ \\
+ & Topographic Wetness Index & D8 flow accumulation & 30\,m & $\bullet$ \\
+ & Profile curvature & 2\textsuperscript{nd}-order finite diff. & 30\,m & \\
+ & Plan curvature & 2\textsuperscript{nd}-order finite diff. & 30\,m & \\
+\midrule
+\multirow{6}{*}{Land cover}
+ & Tree cover fraction & ESA WorldCover 2021 & 10\,m & $\bullet$ \\
+ & Grassland fraction & ESA WorldCover 2021 & 10\,m & $\bullet$ \\
+ & Cropland fraction & ESA WorldCover 2021 & 10\,m & $\bullet$ \\
+ & Built-up fraction & ESA WorldCover 2021 & 10\,m & \\
+ & Snow/ice fraction & ESA WorldCover 2021 & 10\,m & \\
+ & Water fraction & ESA WorldCover 2021 & 10\,m & \\
+\midrule
+\multirow{5}{*}{Climate}
+ & Bio1 (annual mean temp.) & CHELSAch & 25\,m & $\bullet$ \\
+ & Bio4 (temp. seasonality) & CHELSAch & 25\,m & $\bullet$ \\
+ & Bio12 (annual precip.) & CHELSAch & 25\,m & $\bullet$ \\
+ & Bio15 (precip. seasonality) & CHELSAch & 25\,m & \\
+ & Bio18 (precip. warmest quarter) & CHELSAch & 25\,m & \\
+\midrule
+\multirow{4}{*}{Biological}
+ & Canopy height & ETH Global Canopy Height & 10\,m & $\bullet$ \\
+ & NDVI (annual max) & GIMMS MODIS & 250\,m & \\
+ & Human Footprint & \citet{Mu2022} & 1\,km & $\bullet$ \\
+ & Forest-edge distance & Derived from tree cover & 30\,m & \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Terrain features.}
+Elevation was obtained directly from the Copernicus GLO-30 DEM \citep{CopernicusDEM}. Slope and aspect were derived using first-order finite differences at 30\,m resolution. Aspect was encoded as two variables (sin and cos of the azimuth angle) to avoid the circular discontinuity at 0°/360°. The Topographic Wetness Index (TWI) was computed using D8 flow direction and accumulation via the \texttt{pysheds} library, with pit-filling and depression resolution applied beforehand. Profile and plan curvature were derived from second-order finite differences and smoothed with a 5$\times$5 mean filter to reduce noise.
+
+\paragraph{Land cover.}
+Six land-cover fraction layers were computed from ESA WorldCover 2021 \citep{ESAWorldcover} at its native 10\,m resolution. For each class, a binary mask was reprojected to the 30\,m grid using average resampling, yielding the fraction of each 30\,m pixel covered by that land-cover type. The six classes retained for Switzerland are: tree cover, grassland, cropland, built-up, snow/ice, and permanent water bodies.
+
+\paragraph{Climate.}
+Five bioclimatic variables were derived from CHELSAch monthly temperature and precipitation normals (1981--2010) at 25\,m resolution \citep{CHELSAch}: annual mean temperature (Bio1), temperature seasonality (Bio4, standard deviation), annual precipitation (Bio12), precipitation seasonality (Bio15, coefficient of variation), and precipitation of the warmest quarter (Bio18). Each variable was regridded to the 30\,m master grid using bilinear interpolation.
+
+\paragraph{Biological and anthropogenic features.}
+Canopy height was obtained from the ETH Global Canopy Height Model at 10\,m resolution \citep{Lang2023} and regridded to 30\,m via bilinear resampling. The annual maximum NDVI was computed from GIMMS MODIS 8-day composites (250\,m, growing season DOY 97--273) and regridded to 30\,m. The global Human Footprint index \citep{Mu2022} at 1\,km was bilinearly downscaled. Forest-edge distance was computed as a signed Euclidean distance transform from the tree-cover fraction layer (threshold 0.5): positive values indicate distance from forest, negative values indicate depth within forest.
+
+\subsection{Species Occurrence Data}
+\label{sec:species-data}
+
+Species occurrence records for vascular plants in Switzerland were obtained from the Global Biodiversity Information Facility (GBIF) open data snapshot hosted on Amazon S3 \citep{GBIF2024}. The raw dataset was filtered to retain only records within the study extent that met the following quality criteria: coordinate uncertainty $\leq$\,1000\,m, valid geographic coordinates, and taxonomic rank at species level.
+
+After filtering, the dataset comprised approximately 14 million occurrence records spanning 7,912 vascular plant species. For modelling purposes, we retained only species with at least 100 unique occurrence records, yielding 3,756 qualifying species. This threshold ensures sufficient training data for both the Random Forest baseline and the GNN-SDM, while acknowledging that it excludes many rare and threatened species with sparse observational records.
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.7\textwidth]{species_records_histogram.png}
+%   \caption{Distribution of GBIF occurrence records per species (log scale). The dashed line indicates the 100-record threshold applied for model training.}
+%   \label{fig:species-histogram}
+% \end{figure}
+
+\subsection{Protected Areas}
+\label{sec:protected-areas}
+
+Protected area boundaries for Switzerland were obtained from the World Database on Protected Areas (WDPA), filtered to nationally designated sites within the study extent. The dataset includes national parks, nature reserves, landscape protection areas, and Ramsar sites. These boundaries are used in the gap analysis (\cref{sec:gap-analysis}) to assess the degree to which high-priority habitat identified by the GNN-SDM falls within existing protected areas.
+
+\subsection{Feature Selection}
+\label{sec:feature-selection}
+
+To reduce multicollinearity and computational cost, we performed feature selection using Random Forest importance scores. A patch-level RF classifier was trained for six representative species spanning different habitat types and prevalence levels. Feature importance was computed as the mean decrease in Gini impurity, averaged across species.
+
+From the initial 21 candidate features, 12 were retained for downstream modelling (\cref{tab:features}). The excluded features were either highly correlated with retained variables (e.g., Bio15 with Bio12; plan curvature with profile curvature) or contributed negligible predictive power (e.g., NDVI at 250\,m resolution added little beyond the 10\,m canopy height and tree-cover fraction). The selected feature set balances ecological interpretability with predictive performance while keeping the dimensionality manageable for the Self-Organising Map clustering step.
+
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.8\textwidth]{feature_importance_heatmap.png}
+%   \caption{Random Forest feature importance (mean decrease in Gini impurity) for six representative species. Features below the dashed line were excluded from downstream modelling.}
+%   \label{fig:feature-importance}
+% \end{figure}

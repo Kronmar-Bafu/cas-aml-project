@@ -1,0 +1,256 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+
+% --- Simple theme ---
+\usetheme{default}
+\usecolortheme{dove}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+\setbeamerfont{frametitle}{size=\large}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{multirow}
+\usepackage{textcomp}
+
+% --- Code listing style ---
+\definecolor{codebg}{gray}{0.96}
+\definecolor{codegreen}{rgb}{0.2,0.5,0.2}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codeblue}{rgb}{0.15,0.3,0.6}
+
+\lstset{
+  language=Python,
+  basicstyle=\ttfamily\scriptsize,
+  backgroundcolor=\color{codebg},
+  keywordstyle=\color{codeblue}\bfseries,
+  commentstyle=\color{codegreen},
+  stringstyle=\color{codegray},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  framerule=0pt,
+  xleftmargin=4pt,
+  xrightmargin=4pt,
+  aboveskip=6pt,
+  belowskip=4pt,
+}
+
+% --- Title ---
+\title{SOM-GNN-SDM Switzerland}
+\subtitle{Species Distribution Modelling with Graph Neural Networks\\at 30\,m Resolution}
+\author{Marco Kronenberg}
+\date{CAS AML --- May 2026}
+
+\begin{document}
+
+% ============================================================
+\begin{frame}
+\titlepage
+\end{frame}
+
+% ============================================================
+\begin{frame}{Motivation --- Why Graphs for SDM?}
+
+\textbf{Problem:} Traditional SDMs (MaxEnt, RF) treat each location independently.\\
+No spatial context --- a pixel's prediction ignores its neighbours.
+
+\bigskip
+
+\textbf{Insight:} Habitat suitability is \emph{not} independent.\\
+A patch surrounded by suitable habitat is more valuable (connectivity, dispersal).
+
+\bigskip
+
+\textbf{GNN-SDM} (Wu et al.\ 2025): Encode the landscape as a graph.
+\begin{itemize}
+  \item Nodes = habitat patches (with environmental features)
+  \item Edges = spatial adjacency
+  \item Message passing lets each node ``see'' its neighbourhood
+\end{itemize}
+
+\bigskip
+
+\textbf{This project:} Adapt the framework to Swiss flora at 30\,m resolution.
+\begin{itemize}
+  \item Wu et al.: uniform 10\textquotesingle{} grid ($\sim$18.5\,km cells), continental scale
+  \item Ours: SOM-derived patches from 30\,m pixels
+  \item 3,756 plant species from GBIF, 21 environmental features
+\end{itemize}
+
+\end{frame}
+
+% ============================================================
+\begin{frame}{Pipeline --- From Pixels to Graph}
+
+\begin{center}
+\small
+\begin{tabular}{ccccc}
+\fbox{\parbox{2.2cm}{\centering 300M pixels\\21 features}}
+& $\longrightarrow$ &
+\fbox{\parbox{2.4cm}{\centering SOM (64$\times$64)\\$\rightarrow$ 30 types}}
+& $\longrightarrow$ &
+\fbox{\parbox{2.8cm}{\centering Connected comp.\\166,464 patches}}
+\\[6pt]
+& & & $\longrightarrow$ &
+\fbox{\parbox{2.4cm}{\centering Graph\\465K edges}}
+\end{tabular}
+\end{center}
+
+\bigskip
+
+\textbf{12 features per node} (selected from 21 via RF importance):
+
+\smallskip
+
+{\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Group} & \textbf{Features} & \textbf{Source} & \textbf{Native res.} \\
+\midrule
+Terrain & elevation, slope, TWI & Copernicus GLO-30 & 30\,m \\
+Climate & bio1, bio4, bio12 & CHELSAch 1981--2010 & 25\,m \\
+Land cover & tree, grass, built-up fractions & ESA WorldCover 2021 & 10\,m \\
+Biological & canopy height, NDVI, HFP & ETH / GIMMS / Mu et al. & 10\,m--1\,km \\
+\bottomrule
+\end{tabular}
+}
+
+\smallskip
+
+All regridded to 30\,m master grid, then mean-aggregated per patch $\rightarrow$ 12-dim node vector.
+
+\end{frame}
+
+% ============================================================
+\begin{frame}{Feature Correlation Matrix}
+
+\begin{center}
+\includegraphics[height=0.85\textheight]{figures/correlation_matrix.png}
+\end{center}
+
+\end{frame}
+
+% ============================================================
+\begin{frame}{Landscape Patches --- SOM-Based Segmentation}
+
+\begin{center}
+\includegraphics[height=0.85\textheight]{figures/patch_map.png}
+\end{center}
+
+\end{frame}
+
+% ============================================================
+\begin{frame}[fragile]{Model --- GraphSAGE Architecture}
+
+\begin{lstlisting}
+class GNNSDM(torch.nn.Module):
+    def __init__(self, in_channels, hidden_dims=[64, 48, 32], dropout=0.2):
+        super().__init__()
+        self.convs = torch.nn.ModuleList()
+        prev = in_channels
+        for dim in hidden_dims:
+            self.convs.append(SAGEConv(prev, dim, aggr='mean'))
+            prev = dim
+        self.out = torch.nn.Linear(prev, 1)
+
+    def forward(self, x, edge_index):
+        for conv in self.convs:
+            x = F.leaky_relu(conv(x, edge_index))
+            x = F.dropout(x, p=self.dropout, training=self.training)
+        return torch.sigmoid(self.out(x)).squeeze(-1)
+\end{lstlisting}
+
+\textbf{Key design choices:}
+\begin{itemize}\setlength\itemsep{1pt}
+  \item Architecture search on 6 species $\rightarrow$ \texttt{[64, 48, 32]} beats paper's \texttt{[24, 18, 8]}
+  \item Random pseudo-absences (3:1 ratio) --- same as RF for fair comparison
+  \item Node weighting via PageRank; weighted MSE loss; early stopping (patience=50)
+\end{itemize}
+
+\end{frame}
+
+% ============================================================
+\begin{frame}{Results --- 12 Species Deep Dive (GNN vs RF)}
+
+{\small
+\begin{tabular}{llrrrc}
+\toprule
+\textbf{Species} & \textbf{Group} & \textbf{Patches} & \textbf{GNN AUC} & \textbf{RF AUC} & \textbf{$\Delta$} \\
+\midrule
+\textit{Senecio inaequidens}  & common     & 4,838  & \textbf{0.917} & 0.910 & +0.007 \\
+\textit{Fagus sylvatica}      & common     & 14,305 & \textbf{0.822} & 0.788 & +0.034 \\
+\textit{Picea abies}          & common     & 7,526  & \textbf{0.801} & 0.773 & +0.028 \\
+\textit{Phragmites australis} & common     & 3,662  & \textbf{0.800} & 0.787 & +0.013 \\
+\textit{Potentilla erecta}    & common     & 5,527  & \textbf{0.774} & 0.760 & +0.014 \\
+\textit{Trifolium pratense}   & common     & 7,383  & \textbf{0.757} & 0.720 & +0.037 \\
+\midrule
+\textit{Aquilegia alpina}     & vulnerable & 679    & \textbf{0.906} & 0.879 & +0.027 \\
+\textit{Pulsatilla vulgaris}  & vulnerable & 550    & 0.844 & 0.851 & $-$0.007 \\
+\textit{Gladiolus palustris}  & vulnerable & 329    & 0.838 & 0.838 & $\approx$0 \\
+\textit{Stipa pennata}        & vulnerable & 392    & 0.834 & 0.844 & $-$0.010 \\
+\textit{Cypripedium calceolus}& vulnerable & 2,423  & \textbf{0.818} & 0.797 & +0.021 \\
+\textit{Drosera rotundifolia} & vulnerable & 1,499  & 0.812 & 0.812 & $\approx$0 \\
+\bottomrule
+\end{tabular}
+}
+
+\bigskip
+
+\begin{itemize}\setlength\itemsep{1pt}
+  \item GNN consistently outperforms RF on common species (mean $\Delta$ = +0.022)
+  \item Vulnerable species: mixed --- GNN wins where more presence patches exist
+\end{itemize}
+
+\end{frame}
+
+% ============================================================
+\begin{frame}{Predicted vs Observed Prevalence}
+
+\begin{center}
+\includegraphics[width=\textwidth,height=0.82\textheight,keepaspectratio]{figures/prevalence.png}
+\end{center}
+
+\end{frame}
+
+% ============================================================
+\begin{frame}[fragile]{Next Steps --- Conservation Application}
+
+\textbf{What's done:}
+\begin{itemize}\setlength\itemsep{1pt}
+  \item[\checkmark] Full pipeline: data $\rightarrow$ features $\rightarrow$ SOM $\rightarrow$ patches $\rightarrow$ graph $\rightarrow$ GNN
+  \item[\checkmark] 3,751 species with suitability scores
+  \item[\checkmark] RF baseline for comparison (same patches, no graph)
+  \item[\checkmark] IUCN threat status for all species
+\end{itemize}
+
+\medskip
+
+\textbf{What's next:}
+\begin{enumerate}\setlength\itemsep{1pt}
+  \item \textbf{GNN vs RF full comparison} --- quantify where graph structure helps
+  \item \textbf{Circuit-theory connectivity} --- current flow through suitable habitat
+  \item \textbf{Gap analysis} --- overlay with protected areas, find coverage gaps
+\end{enumerate}
+
+\begin{lstlisting}
+# Circuit theory: resistance = 1 - suitability
+# -> current flow identifies critical corridors
+priority_score = (mean_suitability + mean_current_flow) / 2
+\end{lstlisting}
+
+\textbf{Open questions:}
+\begin{itemize}\setlength\itemsep{1pt}
+  \item Does GNN help more for rare species? (connectivity matters more?)
+  \item Can we lower the 100-record threshold for threatened species?
+\end{itemize}
+
+\end{frame}
+
+% ============================================================
+\end{document}

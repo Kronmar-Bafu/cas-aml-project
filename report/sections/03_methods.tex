@@ -1,0 +1,56 @@
+\section{Methods}
+\label{sec:methods}
+
+\subsection{Landscape Patch Construction}
+\label{sec:patches}
+
+\subsubsection{SOM Clustering}
+\label{sec:som}
+
+% SOM architecture, training, hyperparameters
+% Ward linkage to 30 landscape types
+
+\textbf{TODO: SOM methodology.}
+
+\subsubsection{Connected Components and Patch Merging}
+\label{sec:components}
+
+% Connected-component labelling, small patch merging
+% Result: 166,464 patches
+
+\textbf{TODO: Patch construction.}
+
+\subsubsection{Patch Network}
+\label{sec:network}
+
+% Adjacency from shared boundaries
+% 166K nodes, 465K edges
+
+\textbf{TODO: Network construction.}
+
+\subsection{Baseline: Random Forest}
+\label{sec:rf}
+
+% Per-species binary classification
+% Pseudo-absence generation, hyperparameter tuning, CV
+
+\textbf{TODO: RF methodology.}
+
+\subsection{GNN-SDM}
+\label{sec:gnn}
+
+\subsubsection{Model Architecture}
+\label{sec:architecture}
+
+% GraphSAGE, architecture search results
+% Best: [64, 48, 32], LeakyReLU, dropout 0.2
+
+\textbf{TODO: GNN architecture.}
+
+\subsubsection{Training Procedure}
+\label{sec:training}
+
+% One-Class SVM background, PageRank weighting
+% Adam, lr=0.001, weighted MSE, early stopping
+
+\textbf{TODO: Training details.}
