@@ -1,10 +1,83 @@
 \section{Introduction}
 \label{sec:introduction}
 
-% Biodiversity loss context
-% Traditional SDMs: strengths and limitations
-% SOM-GNN-SDM framework motivation
-% Our contribution
-% Research questions: can the framework proposed on large scale yield sufficient results in Switzerland with its many observations
+% --- Biodiversity loss and habitat fragmentation in Switzerland ---
 
-\textbf{TODO: Write introduction.}
+Biodiversity is declining at an unprecedented rate worldwide, driven by habitat 
+loss, fragmentation, climate change, and land-use intensification \citep{IPBES2019}. 
+Switzerland, despite its relatively small area, harbours exceptional plant 
+diversity owing to its pronounced altitudinal gradients and mosaic of biogeographic 
+regions. Yet even here, a third of all assessed species and half of all habitat 
+types are threatened \citep{FOEN2022}, with 28\% of vascular plants considered 
+endangered or regionally extinct and an additional 14\% near-threatened 
+\citep{InfoFlora2024}. The main drivers---soil sealing, landscape fragmentation, 
+intensive land use, and nitrogen inputs---continue to erode habitat quality and 
+connectivity \citep{FOEN2022,FOEN2025}. Effective conservation planning requires 
+spatially explicit predictions of where species can persist, and crucially, which 
+landscape elements link suitable habitat patches into functional networks.
+
+% --- Traditional SDMs: strengths and limitations ---
+
+Species distribution models (SDMs) have become a cornerstone of conservation 
+biogeography, relating georeferenced occurrence records to environmental 
+predictors to map habitat suitability across space \citep{Elith2009,Guisan2005}. 
+Classical approaches, such as generalised linear models, maximum entropy \citep{Phillips2006}, 
+and ensemble methods such as Random Forests \citep{Breiman2001}, treat each 
+occurrence as an independent sample drawn from an environmental niche. While powerful, 
+this point-based paradigm ignores the spatial structure of landscapes: two 
+patches with identical environmental conditions may differ dramatically in 
+ecological value depending on their size, shape, and connectivity to neighbouring 
+habitat. For species whose long-term persistence depends on seed dispersal between 
+habitat patches, such as the Cypripedium calceolus, this omission can lead to 
+misleading suitability estimates and suboptimal conservation recommendations.
+
+% --- GNN-SDM framework: how graph structure captures landscape interactions ---
+
+Graph Neural Networks (GNNs) offer a principled way to incorporate landscape 
+structure into SDMs. By representing the landscape as a graph, where nodes are 
+ecologically homogeneous patches and edges encode spatial adjacency. A GNN can 
+learn how environmental conditions in neighbouring patches jointly influence 
+local habitat suitability. \citet{Wu2025} introduced the SOM-GNN-SDM framework, 
+demonstrating that a GraphSAGE architecture \citep{Hamilton2017} trained on 
+landscape graphs substantially outperforms traditional SDMs for virtual and real
+species across continental extents. Their approach constructs landscape patches 
+via Self-Organising Maps (SOMs) \citep{Kohonen1982}, builds an adjacency graph, 
+and propagates information across the graph to produce suitability predictions 
+that are spatially coherent and connectivity-aware.
+
+% --- Conservation application: graph structure for gap identification ---
+
+Beyond improving predictive accuracy, the graph representation opens a direct 
+path to conservation applications. The Swiss federal government has identified 
+the lack of an ecological infrastructure that protects and connects core 
+biodiversity areas as a key deficit, setting a target of 17\% of national 
+territory as connected core areas by 2030, up from 13.4\% today 
+\citep{FOEN2022,FOEN2025}. Because the landscape graph explicitly encodes 
+connectivity, it can be analysed using circuit theory and centrality metrics to 
+identify critical corridors: patches whose protection would maintain or restore 
+habitat connectivity for threatened species. This transforms the SDM output from 
+a static suitability map into an actionable tool for spatial conservation 
+prioritisation and gap analysis, directly informing where the ecological 
+infrastructure should be expanded.
+
+% --- Our contribution ---
+
+In this work, we adapt the GNN-SDM framework to Swiss vascular flora at 30\,m 
+resolution, presenting a substantially finer grain than the original continental-scale 
+application. We construct a landscape graph of 166,464 patches from 12 environmental 
+features using SOM-based clustering and connected-component labelling, train 
+per-species GraphSAGE models for 3,751 qualifying plant species, and benchmark 
+against a Random Forest baseline. We further apply circuit-theory connectivity 
+analysis to the resulting suitability maps to identify conservation priority 
+areas and quantify protection gaps relative to the existing protected-area network.
+
+% --- Research questions ---
+
+Specifically, we address the following research questions:
+\begin{enumerate}[nosep]
+  \item Can GNN-SDM outperform a traditional Random Forest at patch-level species distribution modelling for Swiss plants?
+  \item Does the graph structure confer greater benefit for rare and vulnerable species, whose distributions are more fragmented?
+  \item What GNN architecture is best suited for flora---given that plants, unlike the mobile fauna studied by \citet{Wu2025}, have limited active dispersal?
+  \item Can the graph structure be leveraged to identify spatial gaps in the protected-area network where additional conservation measures would be most beneficial?
+\end{enumerate}
+

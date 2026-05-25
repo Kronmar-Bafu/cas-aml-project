@@ -8,13 +8,39 @@
   doi     = {10.1111/geb.70162},
 }
 
-@inproceedings{Hamilton2017,
-  author    = {Hamilton, William L. and Ying, Rex and Leskovec, Jure},
-  title     = {Inductive Representation Learning on Large Graphs},
-  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
-  year      = {2017},
-  volume    = {30},
+@ARTICLE{Hamilton2017,
+  title         = "Inductive representation learning on large graphs",
+  author        = "Hamilton, William L and Ying, Rex and Leskovec, Jure",
+  abstract      = "Low-dimensional embeddings of nodes in large graphs have
+                   proved extremely useful in a variety of prediction tasks,
+                   from content recommendation to identifying protein
+                   functions. However, most existing approaches require that
+                   all nodes in the graph are present during training of the
+                   embeddings; these previous approaches are inherently
+                   transductive and do not naturally generalize to unseen
+                   nodes. Here we present GraphSAGE, a general, inductive
+                   framework that leverages node feature information (e.g.,
+                   text attributes) to efficiently generate node embeddings for
+                   previously unseen data. Instead of training individual
+                   embeddings for each node, we learn a function that generates
+                   embeddings by sampling and aggregating features from a
+                   node's local neighborhood. Our algorithm outperforms strong
+                   baselines on three inductive node-classification benchmarks:
+                   we classify the category of unseen nodes in evolving
+                   information graphs based on citation and Reddit post data,
+                   and we show that our algorithm generalizes to completely
+                   unseen graphs using a multi-graph dataset of protein-protein
+                   interactions.",
+  month         =  jun,
+  year          =  2017,
+  copyright     = "http://arxiv.org/licenses/nonexclusive-distrib/1.0/",
+  archivePrefix = "arXiv",
+  primaryClass  = "cs.SI",
+  eprint        = "1706.02216",
+  doi           = {10.48550/arXiv.1706.02216
+},
 }
+
 
 @article{Fey2019,
   author  = {Fey, Matthias and Lenssen, Jan Eric},
@@ -79,4 +105,166 @@
   title  = {{ESA WorldCover} 10\,m 2021},
   year   = {2022},
   url    = {https://esa-worldcover.org/en},
+}
+
+@ARTICLE{Elith2009,
+  title     = "Species distribution models: Ecological explanation and
+               prediction across space and time",
+  author    = "Elith, Jane and Leathwick, John R",
+  abstract  = "Species distribution models (SDMs) are numerical tools that
+               combine observations of species occurrence or abundance with
+               environmental estimates. They are used to gain ecological and
+               evolutionary insights and to predict distributions across
+               landscapes, sometimes requiring extrapolation in space and time.
+               SDMs are now widely used across terrestrial, freshwater, and
+               marine realms. Differences in methods between disciplines
+               reflect both differences in species mobility and in
+               ``established use.'' Model realism and robustness is influenced
+               by selection of relevant predictors and modeling method,
+               consideration of scale, how the interplay between environmental
+               and geographic factors is handled, and the extent of
+               extrapolation. Current linkages between SDM practice and
+               ecological theory are often weak, hindering progress. Remaining
+               challenges include: improvement of methods for modeling
+               presence-only data and for model selection and evaluation;
+               accounting for biotic interactions; and assessing model
+               uncertainty.",
+  journal   = "Annu. Rev. Ecol. Evol. Syst.",
+  publisher = "Annual Reviews",
+  volume    =  40,
+  number    =  1,
+  pages     = "677--697",
+  month     =  dec,
+  year      =  2009,
+  language  = "en",
+  doi       = {10.1146/annurev.ecolsys.110308.120159},
+}
+
+@ARTICLE{Guisan2005,
+  title     = "Predicting species distribution: offering more than simple
+               habitat models",
+  author    = "Guisan, Antoine and Thuiller, Wilfried",
+  abstract  = "In the last two decades, interest in species distribution models
+               (SDMs) of plants and animals has grown dramatically. Recent
+               advances in SDMs allow us to potentially forecast anthropogenic
+               effects on patterns of biodiversity at different spatial scales.
+               However, some limitations still preclude the use of SDMs in many
+               theoretical and practical applications. Here, we provide an
+               overview of recent advances in this field, discuss the
+               ecological principles and assumptions underpinning SDMs, and
+               highlight critical limitations and decisions inherent in the
+               construction and evaluation of SDMs. Particular emphasis is
+               given to the use of SDMs for the assessment of climate change
+               impacts and conservation management issues. We suggest new
+               avenues for incorporating species migration, population
+               dynamics, biotic interactions and community ecology into SDMs at
+               multiple spatial scales. Addressing all these issues requires a
+               better integration of SDMs with ecological theory.",
+  journal   = "Ecol. Lett.",
+  publisher = "Wiley",
+  volume    =  8,
+  number    =  9,
+  pages     = "993--1009",
+  month     =  sep,
+  year      =  2005,
+  keywords  = "Dispersal; ecological niche theory; future projections; habitat
+               suitability maps; population dynamics; prediction errors;
+               predictive biogeography; spatial scales; species distribution
+               models",
+  copyright = "http://onlinelibrary.wiley.com/termsAndConditions\#vor",
+  language  = "en",
+  doi       = {10.1111/j.1461-0248.2005.00792.x},
+}
+
+@ARTICLE{Phillips2006,
+  title     = "Maximum entropy modeling of species geographic distributions",
+  author    = "Phillips, Steven J and Anderson, Robert P and Schapire, Robert E",
+  abstract  = "The availability of detailed environmental data, together with
+               inexpensive and powerful computers, has fueled a rapid increase
+               in predictive modeling of species environmental requirements and
+               geographic distributions. For some species, detailed
+               presence/absence occurrence data are available, allowing the use
+               of a variety of standard statistical techniques. However,
+               absence data are not available for most species. In this paper,
+               we introduce the use of the maximum entropy method (Maxent) for
+               modeling species geographic distributions with presence-only
+               data. Maxent is a general-purpose machine learning method with a
+               simple and precise mathematical formulation, and it has a number
+               of aspects that make it well-suited for species distribution
+               modeling. In order to investigate the efficacy of the method,
+               here we perform a continental-scale case study using two
+               Neotropical mammals: a lowland species of sloth, Bradypus
+               variegatus, and a small montane murid rodent, Microryzomys
+               minutus. We compared Maxent predictions with those of a commonly
+               used presence-only modeling method, the Genetic Algorithm for
+               Rule-Set Prediction (GARP). We made predictions on 10 random
+               subsets of the occurrence records for both species, and then
+               used the remaining localities for testing. Both algorithms
+               provided reasonable estimates of the species' range, far
+               superior to the shaded outline maps available in field guides.
+               All models were significantly better than random in both
+               binomial tests of omission and receiver operating characteristic
+               (ROC) analyses. The area under the ROC curve (AUC) was almost
+               always higher for Maxent, indicating better discrimination of
+               suitable versus unsuitable areas for the species. The Maxent
+               modeling approach can be used in its present form for many
+               applications with presence-only datasets, and merits further
+               research and development.",
+  journal   = "Ecol. Modell.",
+  publisher = "Elsevier BV",
+  volume    =  190,
+  number    = "3-4",
+  pages     = "231--259",
+  month     =  jan,
+  year      =  2006,
+  language  = "en",
+  doi       = {10.1016/j.ecolmodel.2005.03.026},
+}
+
+@article{Breiman2001,
+  author  = {Breiman, Leo},
+  title   = {Random Forests},
+  journal = {Machine Learning},
+  year    = {2001},
+  volume  = {45},
+  number  = {1},
+  pages   = {5--32},
+  doi     = {10.1023/A:1010933404324},
+}
+
+@misc{IPBES2019,
+  author = {{IPBES}},
+  title  = {Global Assessment Report on Biodiversity and Ecosystem Services},
+  year   = {2019},
+  url    = {https://ipbes.net/global-assessment},
+  note   = {Intergovernmental Science-Policy Platform on Biodiversity and Ecosystem Services},
+}
+
+@misc{InfoFlora2016,
+  author = {{Info Flora}},
+  title  = {The National Data and Information Centre on the {Swiss} Flora --- Red List},
+  year   = {2016},
+  url    = {https://www.infoflora.ch/en/species-conservation/lists.html#national-red-list-2016},
+}
+
+@techreport{FOEN2025,
+  author      = {{Federal Office for the Environment}},
+  title       = {Aktionsplan {Strategie Biodiversit\"at Schweiz}},
+  institution = {FOEN, Swiss Confederation},
+  year        = {2025},
+  number      = {UI-2519-D},
+  url         = {https://www.bafu.admin.ch/dam/en/sd-web/H2cDklfpnDpw/UI-2519-D_AktionsplanBiodiversitaet_II.pdf},
+  address     = {Bern},
+}
+
+
+
+@techreport{FOEN2022,
+  author      = {{Swiss Federal Council}},
+  title       = {Environment {Switzerland} 2022: Report of the {Federal Council}},
+  institution = {Federal Office for the Environment (FOEN)},
+  year        = {2022},
+  address     = {Bern},
+  url         = {https://www.bafu.admin.ch/en/er22},
+  note        = {Order no.\ 810.400.143eng},
 }
