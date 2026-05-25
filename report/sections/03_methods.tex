@@ -1,40 +1,86 @@
 \section{Methods}
 \label{sec:methods}
 
+This section describes the methodological pipeline for constructing a graph-based 
+species distribution model (SOM-GNN-SDM) for Swiss flora at 30\,m resolution, 
+following the framework proposed by \citet{Wu2025}. The pipeline consists of three 
+stages: 
+landscape patch construction via Self-Organising Map clustering and connected-
+component analysis, (2)~a Random Forest baseline, and (3)~the SOM-GNN-SDM itself.
+
 \subsection{Landscape Patch Construction}
 \label{sec:patches}
+
+The landscape patch construction transforms the continuous 30\,m raster feature 
+stack into a graph representation where nodes correspond to ecologically 
+homogeneous habitat patches and edges encode spatial adjacency.
 
 \subsubsection{SOM Clustering}
 \label{sec:som}
 
-% SOM architecture, training, hyperparameters
-% Ward linkage to 30 landscape types
+A Self-Organising Map \citep[SOM;][]{Kohonen1982} was trained to identify 
+recurring landscape types from the 12 selected environmental features. The SOM 
+was configured as a $64 \times 64$ hexagonal, toroidal grid and initialised with 
+PCA. Training used a subsample of 500\,000 pixels (drawn from the ${\sim}160$\,M
+valid pixels in the study extent), preprocessed with a \texttt{RobustScaler} and 
+domain-specific post-scaling (land-cover fractions up-weighted $3\times$; 
+forest-edge distance clipped to $[-5, 5]$).
 
-\textbf{TODO: SOM methodology.}
+The SOM was trained for 150 epochs with a neighbourhood radius decaying from 64 
+to 16 and a learning rate decaying from 0.05 to 0.016. Convergence was assessed 
+on a held-out 20\% validation set using quantisation error (QE) and topographic 
+error (TE); 150 epochs represented the sweet spot beyond which improvements were
+marginal.
+
+After training, the codebook vectors were hierarchically clustered using Ward's 
+linkage, and the dendrogram was cut to yield 30 landscape types. Every valid 
+pixel in the study extent was then assigned to its best-matching unit (BMU) via 
+a FAISS exact-$L_2$ index, producing a categorical landscape-type raster at 30\,
+m resolution.
 
 \subsubsection{Connected Components and Patch Merging}
 \label{sec:components}
 
-% Connected-component labelling, small patch merging
-% Result: 166,464 patches
+Spatially contiguous regions of the same landscape type were identified using 
+connected-component labelling (\texttt{skimage.measure.label}). To avoid an 
+excessive number of tiny fragments, patches smaller than 100 pixels 
+(${\sim}0.09$\,km$^2$) were merged into their most similar neighbour using a 
+mapping-table approach. This procedure yielded \textbf{166,464 landscape patches} 
+covering the full study extent.
 
-\textbf{TODO: Patch construction.}
+For each patch, the mean value of the 12 selected environmental features was 
+computed from the underlying raster stack, producing a $166{,}464 \times 12$ 
+node-feature matrix.
 
 \subsubsection{Patch Network}
 \label{sec:network}
 
-% Adjacency from shared boundaries
-% 166K nodes, 465K edges
-
-\textbf{TODO: Network construction.}
+An undirected graph was constructed by connecting patches that share at least 
+one boundary pixel. The resulting \texttt{NetworkX} graph contains 
+\textbf{166,464 nodes} and \textbf{465,833 edges}. Node attributes are the mean 
+environmental features; no edge weights were used.
 
 \subsection{Baseline: Random Forest}
 \label{sec:rf}
 
-% Per-species binary classification
-% Pseudo-absence generation, hyperparameter tuning, CV
+A per-species Random Forest \citep{Breiman2001} classifier served as the 
+non-spatial baseline. For each of the 3,756 qualifying species ($\geq 100$ GBIF 
+records), the following procedure was applied:
 
-\textbf{TODO: RF methodology.}
+\begin{enumerate}
+    \item \textbf{Presence labels.} GBIF occurrence coordinates were mapped to 
+    the patch-label raster, yielding a set of presence patches per species.
+    \item \textbf{Pseudo-absence generation.} Background patches were sampled at 
+    a 3:1 ratio (absence\,:\,presence) from patches without recorded occurrences, 
+    using a fixed random seed for reproducibility.
+    \item \textbf{Model training.} A \texttt{scikit-learn} Random Forest 
+    (default hyperparameters) was trained on the patch-level mean features.
+    \item \textbf{Evaluation.} Performance was assessed via 5-fold cross-validated 
+    metrics: AUC, accuracy, precision, recall, F1, MCC, Cohen's $\kappa$, and TSS.
+\end{enumerate}
+
+No hyperparameter tuning was performed for the baseline, ensuring a fair 
+comparison with the GNN-SDM under equivalent pseudo-absence conditions.
 
 \subsection{GNN-SDM}
 \label{sec:gnn}
@@ -42,15 +88,96 @@
 \subsubsection{Model Architecture}
 \label{sec:architecture}
 
-% GraphSAGE, architecture search results
-% Best: [64, 48, 32], LeakyReLU, dropout 0.2
+The SOM-GNN-SDM is based on GraphSAGE \citep{Hamilton2017}, implemented in 
+PyTorch Geometric \citep{Fey2019}. The model consists of a stack of 
+\texttt{SAGEConv} layers with mean aggregation, each followed by LeakyReLU 
+activation and dropout ($p = 0.2$), and a final linear layer with sigmoid output 
+producing a habitat-suitability score in $[0, 1]$ for every patch.
 
-\textbf{TODO: GNN architecture.}
+An architecture search was conducted on six representative species spanning 
+diverse habitats (\textit{Picea abies}, \textit{Fagus sylvatica}, 
+\textit{Trifolium pratense}, \textit{Potentilla erecta}, 
+\textit{Phragmites australis}, \textit{Senecio inaequidens}). 
+Six architectures were compared:
+
+\begin{itemize}
+    \item 1-layer: $[16]$ (417 parameters)
+    \item 2-layer: $[24, 12]$ (1,201 parameters)
+    \item Paper default: $[24, 18, 8]$ (1,787 parameters)
+    \item Wider: $[48, 32, 16]$ (5,361 parameters)
+    \item Extra-wide: $[64, 48, 32]$ (10,929 parameters)
+    \item 4-layer: $[32, 24, 16, 8]$ (3,417 parameters)
+\end{itemize}
+
+The extra-wide 3-layer architecture $[64, 48, 32]$ consistently achieved the 
+highest mean AUC across all test species and was selected for production training. 
+This is notably wider than the $[24, 18, 8]$ architecture proposed by \citet{Wu2025} 
+for virtual fauna species, suggesting that flora---with their sessile nature and 
+finer-grained habitat associations---benefit from greater representational 
+capacity per layer rather than additional depth.
 
 \subsubsection{Training Procedure}
 \label{sec:training}
 
-% One-Class SVM background, PageRank weighting
-% Adam, lr=0.001, weighted MSE, early stopping
+For each species, the GNN-SDM was trained independently using the following pipeline:
 
-\textbf{TODO: Training details.}
+\begin{enumerate}
+    \item \textbf{Background selection via random pseudo-absence.}
+    Non-presence patches were sampled at a 3:1 ratio (background\,:\,presence) 
+    using a fixed random seed. An initial design based on One-Class SVM background 
+    selection \citep[as in][]{Wu2025} was evaluated during development but 
+    abandoned in favour of random pseudo-absence for the production run. The 
+    random strategy ensures a fair comparison with the RF baseline (which uses 
+    same pseudo-absence protocol) and proved more robust across the full species 
+    set, avoiding the computational overhead and occasional instability of 
+    fitting a kernel SVM on high-dimensional patch features for each of 3,756 species.
+
+    \item \textbf{PageRank weighting.}
+    Presence patches were weighted by their PageRank centrality in the landscape 
+    graph, following \citet{Wu2025}. This assigns higher importance to 
+    structurally well-connected patches, reflecting their greater ecological 
+    significance as habitat corridors or core areas. Background patches received 
+    uniform weight of 1.0.
+
+    \item \textbf{Train/validation split.}
+    The labelled patches (presence $+$ background) were shuffled and split 80/20 
+    into training and validation sets.
+
+    \item \textbf{Optimisation.}
+    The model was trained with the Adam optimiser (learning rate $= 0.001$) 
+    using a weighted mean-squared-error loss:
+    \[
+        \mathcal{L} = \frac{1}{|\mathcal{T}|} \sum_{i \in \mathcal{T}} w_i \left( \hat{y}_i - y_i \right)^2
+    \]
+    where $\mathcal{T}$ is the training set, $w_i$ the PageRank-derived weight, 
+    $\hat{y}_i$ the predicted suitability, and $y_i \in \{0, 1\}$ the label.
+
+    \item \textbf{Early stopping.}
+    Validation AUC was evaluated every 10 epochs. Training was halted if no 
+    improvement occurred for 50 consecutive epochs (patience). The model state 
+    with the best validation AUC was restored for prediction. Maximum training 
+    duration was 500 epochs.
+
+    \item \textbf{Prediction.}
+    The best model was used to predict habitat suitability for all 166,464 
+    patches, yielding a continuous suitability surface per species.
+\end{enumerate}
+
+\subsubsection{Evaluation}
+\label{sec:evaluation}
+
+To evaluate the GNN-SDM on the same footing as the RF baseline, a post-hoc 
+evaluation was performed for each species: presence patches and a 3:1 random 
+sample of non-presence patches were combined, and the predicted suitability 
+scores were evaluated using the same eight metrics (AUC, accuracy, precision, 
+recall, F1, MCC, Cohen's $\kappa$, TSS) with a classification threshold of 0.5.
+
+\subsubsection{Computational Setup}
+\label{sec:compute}
+
+Production training of all 3,756 species was executed as an AWS SageMaker 
+Training Job on a GPU instance (NVIDIA GPU, CUDA-accelerated). The job supported 
+checkpointing for spot-instance interruptions and completed in approximately 50 
+minutes of GPU time. Node features were standardised (zero mean, unit variance) 
+before training, and the full graph (166,464 nodes, 931,666 directed edges) was 
+loaded onto the GPU for efficient message passing.
