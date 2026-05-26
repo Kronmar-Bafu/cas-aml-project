@@ -74,13 +74,16 @@ records), the following procedure was applied:
     a 3:1 ratio (absence\,:\,presence) from patches without recorded occurrences, 
     using a fixed random seed for reproducibility.
     \item \textbf{Model training.} A \texttt{scikit-learn} Random Forest 
-    (default hyperparameters) was trained on the patch-level mean features.
+    was trained on the patch-level mean features using tuned hyperparameters 
+    (see below).
     \item \textbf{Evaluation.} Performance was assessed via 5-fold cross-validated 
     metrics: AUC, accuracy, precision, recall, F1, MCC, Cohen's $\kappa$, and TSS.
 \end{enumerate}
 
-No hyperparameter tuning was performed for the baseline, ensuring a fair 
-comparison with the GNN-SDM under equivalent pseudo-absence conditions.
+Hyperparameter tuning was performed via \texttt{GridSearchCV} on the same 
+six representative species used for the GNN architecture search, covering 
+diverse habitat types across Switzerland. The best hyperparameters from 
+this limited tuning were then applied uniformly to all 3,756 species.
 
 \subsection{GNN-SDM}
 \label{sec:gnn}
@@ -89,10 +92,33 @@ comparison with the GNN-SDM under equivalent pseudo-absence conditions.
 \label{sec:architecture}
 
 The SOM-GNN-SDM is based on GraphSAGE \citep{Hamilton2017}, implemented in 
-PyTorch Geometric \citep{Fey2019}. The model consists of a stack of 
-\texttt{SAGEConv} layers with mean aggregation, each followed by LeakyReLU 
-activation and dropout ($p = 0.2$), and a final linear layer with sigmoid output 
-producing a habitat-suitability score in $[0, 1]$ for every patch.
+PyTorch Geometric \citep{Fey2019}. At each layer $l$, a node $v$ aggregates 
+information from its neighbourhood $\mathcal{N}(v)$ using the mean aggregator 
+and combines it with its own representation:
+\begin{align}
+    \mathbf{h}^{(l)}_{\mathcal{N}(v)} &= \frac{1}{|\mathcal{N}(v)|} 
+        \sum_{u \in \mathcal{N}(v)} \mathbf{h}^{(l-1)}_u 
+        \label{eq:sage-agg} \\
+    \mathbf{h}^{(l)}_v &= \sigma\!\left( 
+        \mathbf{W}^{(l)} \cdot 
+        \mathrm{CONCAT}\!\left( 
+            \mathbf{h}^{(l-1)}_v,\; 
+            \mathbf{h}^{(l)}_{\mathcal{N}(v)} 
+        \right) 
+    \right) \label{eq:sage-update}
+\end{align}
+where $\mathbf{h}^{(0)}_v = \mathbf{x}_v$ is the input feature vector of 
+node $v$, $\mathbf{W}^{(l)}$ is a learnable weight matrix, and $\sigma$ is 
+the LeakyReLU activation function. Dropout ($p = 0.2$) is applied after each 
+layer during training. The final node embeddings are passed through a linear 
+layer with sigmoid activation to produce a habitat-suitability score 
+$\hat{y}_v \in [0, 1]$ for every patch:
+\begin{equation}
+    \hat{y}_v = \mathrm{sigmoid}\!\left( 
+        \mathbf{w}^\top \mathbf{h}^{(L)}_v + b 
+    \right) \label{eq:sage-output}
+\end{equation}
+where $L$ is the number of GraphSAGE layers.
 
 An architecture search was conducted on six representative species spanning 
 diverse habitats (\textit{Picea abies}, \textit{Fagus sylvatica}, 
