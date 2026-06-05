@@ -10,11 +10,13 @@
 - Biodiversity loss and habitat fragmentation in Switzerland
 - Traditional SDMs: strengths and limitations (point-based, no spatial context)
 - GNN-SDM framework: how graph structure captures landscape interactions
+- The Graph Structure helps in identifying gaps where additional measures could help with converstaion
 - Our contribution: regional adaptation at 30 m, flora-specific architecture tuning
 - Research questions:
   1. Can GNN-SDM outperform traditional RF at patch-level SDM for Swiss plants?
   2. Does the graph structure help more for rare/vulnerable species?
   3. What architecture works best for flora (vs the paper's fauna-oriented design)?
+  4. Can the graph structure help in dientifying gap structures for which conservation measures could be beneficial?
 
 ## 3. Data & Study Area (2 pages)
 
@@ -34,6 +36,7 @@
 ### 3.3 Species occurrence data
 - GBIF: 14M records, 7,912 species within study extent
 - Filtering: ≥100 records → 3,756 qualifying species
+- No filtering by temporal dimension: we assume the Swiss landscape hasn't changed much. 
 - **Figure**: Distribution of records per species (histogram)
 
 ### 3.4 Feature selection
