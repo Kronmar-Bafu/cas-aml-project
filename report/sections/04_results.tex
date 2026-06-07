@@ -8,20 +8,19 @@ The SOM converged after approximately 150 training epochs on the
 400\,000-pixel subsample (80\,\% of 500\,000, with 20\,\% held out
 for validation). \Cref{fig:som-convergence} shows the evolution of
 validation quantisation error (QE) and topographic error (TE) across
-training stages. QE decreases steeply during the first 60 epochs and
-plateaus beyond epoch~150, confirming that additional training yields
-diminishing returns. Inspection of the codebook feature maps
-(\cref{fig:codebook-comparison}) corroborates this: at 150~epochs,
-the codebook displays smooth gradients with distinct regional
-structure, whereas at 200~epochs the features fragment into noise
-as the shrinking neighbourhood radius causes individual neurons to
-overfit local samples. While QE continues to decrease beyond
-150~epochs, the topographic error increases and the codebook loses
-the spatial coherence needed for meaningful landscape-type
-clustering. The final validation metrics
-(QE\,=\,1.54, TE\,=\,0.14) at 150~epochs thus represent the best
-trade-off between quantisation fidelity and topological
-preservation.
+training stages. QE decreases monotonically throughout training,
+but the codebook feature maps
+(\cref{fig:codebook-comparison}) reveal that this continued
+improvement comes at a cost: at 150~epochs, the codebook displays
+smooth gradients with distinct regional structure, whereas at
+200~epochs the features fragment into noise as the shrinking
+neighbourhood radius causes individual neurons to overfit local
+samples. While QE continues to decrease beyond 150~epochs, the
+topographic error increases and the codebook loses the spatial
+coherence needed for meaningful landscape-type clustering. The
+final validation metrics (QE\,=\,1.54, TE\,=\,0.14) at 150~epochs
+thus represent the best trade-off between quantisation fidelity and
+topological preservation.
 
 \begin{figure}[htbp]
   \centering
@@ -42,11 +41,11 @@ fragments smaller than 100~pixels produced the final landscape graph
 of \textbf{166\,464 patches} and \textbf{465\,833 edges}.
 
 The patch size distribution (\cref{fig:patch-stats}) shows a median
-of approximately \textbf{X}~pixels (${\sim}$\textbf{X}\,km$^2$),
-with a long tail towards larger contiguous patches in homogeneous
-terrain (e.g.\ alpine grassland, dense forest). The minimum enforced
-size of 100~pixels (${\sim}0.09$\,km$^2$) ensures that each patch is
-large enough to carry ecologically meaningful feature averages.
+of 340~pixels (${\sim}0.31$\,km$^2$), with a long tail towards
+larger contiguous patches in homogeneous terrain (e.g.\ alpine
+grassland, dense forest). The minimum enforced size of 100~pixels
+(${\sim}0.09$\,km$^2$) ensures that each patch is large enough to
+carry ecologically meaningful feature averages.
 
 The full-extent PCA-coloured patch map (\cref{fig:pca-patches}) reveals
 coherent biogeographic structure: similar colours emerge for the
