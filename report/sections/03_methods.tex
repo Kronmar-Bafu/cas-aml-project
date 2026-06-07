@@ -207,3 +207,130 @@ checkpointing for spot-instance interruptions and completed in approximately 50
 minutes of GPU time. Node features were standardised (zero mean, unit variance) 
 before training, and the full graph (166,464 nodes, 931,666 directed edges) was 
 loaded onto the GPU for efficient message passing.
+
+\subsection{Conservation Prioritisation}
+\label{sec:conservation}
+
+The final stage of the pipeline combines the GNN-SDM habitat suitability 
+predictions with circuit-theory connectivity analysis to produce a multi-species 
+conservation priority surface, which is then overlaid with existing protected 
+areas to identify protection gaps.
+
+\subsubsection{Complementarity of Suitability and Connectivity}
+\label{sec:complementarity}
+
+A natural question arises as to whether the circuit-theory step is redundant 
+given that GraphSAGE already incorporates neighbourhood information during 
+message passing. The two components are, however, fundamentally complementary:
+
+\begin{itemize}
+    \item \textbf{GNN suitability} is a \emph{local} property. GraphSAGE 
+    aggregates features from the 1--2 hop neighbourhood to predict whether a 
+    given patch is suitable habitat for a species. The output answers: 
+    ``Is this place good habitat?''
+
+    \item \textbf{Circuit-theory current flow} is a \emph{global network} 
+    property. It treats the entire landscape graph as an electrical circuit 
+    and computes which patches act as irreplaceable bridges between isolated 
+    population clusters. The output answers: ``Is this place critical for 
+    maintaining connectivity between populations?''
+\end{itemize}
+
+These two perspectives are orthogonal. A patch may have moderate suitability 
+(GNN score ${\sim}0.3$) yet carry very high current because it lies in the only 
+traversable corridor between two populations. Conversely, a patch in the core 
+of a large population may have high suitability but low current because 
+alternative paths exist. Conservation action is most impactful at patches that 
+score highly on \emph{both} dimensions---places that are simultaneously good 
+habitat and vital connectivity links.
+
+\subsubsection{Circuit-Theory Connectivity}
+\label{sec:circuit}
+
+For each species, the landscape graph is treated as a resistor network where 
+the conductance of each edge $(u, v)$ is defined as the mean suitability of 
+the two adjacent patches:
+\begin{equation}
+    g_{uv} = \max\!\left( 10^{-4},\; 
+        \frac{\hat{y}_u + \hat{y}_v}{2} 
+    \right)
+    \label{eq:conductance}
+\end{equation}
+This ensures that current preferentially flows through high-suitability regions 
+(low resistance), reflecting the ecological principle that organisms move more 
+easily through suitable habitat.
+
+Source and ground nodes are defined by the species' actual observation patches. 
+These patches are grouped into connected components in the landscape graph; 
+components with $\geq 3$ patches are ranked by size, and current flow is solved 
+between the top $k = 6$ component pairs using Kirchhoff's circuit laws. 
+Specifically, for each source--ground pair, one unit of current is injected 
+uniformly across source nodes and extracted uniformly at ground nodes. The 
+resulting system of linear equations (conductance Laplacian) is solved for node 
+voltages using a sparse direct solver (\texttt{scipy.sparse.linalg.spsolve}), 
+and the absolute current through each node is accumulated across all pairs.
+
+Species with fewer than 2 qualifying components are excluded, as connectivity 
+cannot be meaningfully assessed.
+
+\subsubsection{Species Selection and Filtering}
+\label{sec:species-selection}
+
+The gap analysis targets threatened species (IUCN categories NT, VU, EN, CR) 
+that have both GNN suitability scores and sufficient spatial structure for 
+circuit analysis. Two filters are applied:
+
+\begin{enumerate}
+    \item \textbf{Non-native exclusion.} Species whose IUCN threat status 
+    refers to their native range outside Switzerland (e.g.\ \textit{Ginkgo 
+    biloba}, \textit{Sequoiadendron giganteum}) are excluded, as their 
+    occurrences in Switzerland represent planted individuals in parks and 
+    gardens rather than populations requiring habitat connectivity.
+
+    \item \textbf{Minimum connectivity.} Species whose observation patches 
+    form fewer than 2 connected components of size $\geq 3$ are excluded, 
+    as the circuit-theory framework requires at least one source--ground 
+    pair.
+\end{enumerate}
+
+\subsubsection{Normalisation and Aggregation}
+\label{sec:aggregation}
+
+Per-species current flow values are normalised to $[0, 1]$ using the 99th 
+percentile as ceiling:
+\begin{equation}
+    \tilde{c}_{v} = \min\!\left( 1,\; 
+        \frac{c_v}{P_{99}(c)} 
+    \right)
+    \label{eq:normalisation}
+\end{equation}
+This percentile-based approach is more robust than max-normalisation, which 
+is sensitive to single extreme pinch-point patches that would compress all 
+other values toward zero.
+
+Species are weighted by IUCN threat level (CR\,=\,4, EN\,=\,3, VU\,=\,2, 
+NT\,=\,1) to reflect conservation urgency. The multi-species priority surface 
+is then computed as:
+\begin{equation}
+    P_v = \frac{1}{2}\left( 
+        \frac{\sum_s w_s \hat{y}_{v,s}}{\sum_s w_s} + 
+        \frac{\sum_s w_s \tilde{c}_{v,s}}{\sum_s w_s} 
+    \right)
+    \label{eq:priority}
+\end{equation}
+where $w_s$ is the IUCN weight of species $s$, $\hat{y}_{v,s}$ the GNN 
+suitability, and $\tilde{c}_{v,s}$ the normalised current flow at patch $v$.
+
+\subsubsection{Protected Area Overlay}
+\label{sec:overlay}
+
+The Swiss protected area network (WDPA; 10,522 polygons) is rasterised onto 
+the 30\,m patch grid. Each patch is assigned the fraction of its constituent 
+pixels that fall within any protected area polygon. The analysis is restricted 
+to patches within Swiss territory (majority of pixels inside the national 
+boundary) to avoid false negatives from neighbouring countries.
+
+Conservation gaps are quantified by examining what fraction of high-priority 
+patches (top 5\% and top 10\% of the priority surface) currently lack any 
+protected-area coverage. These unprotected high-priority patches represent 
+the most urgent candidates for protection expansion.
