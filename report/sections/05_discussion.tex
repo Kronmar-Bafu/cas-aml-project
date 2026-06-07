@@ -1,32 +1,26 @@
-\section{Discussion}
-\label{sec:discussion}
-
-\subsection{Architecture Adaptation for Flora}
-\label{sec:discuss-architecture}
-
-% Why wider networks, fewer hops for plants vs animals
-
-\textbf{TODO: Architecture discussion.}
-
-\subsection{Value of Graph Structure}
-\label{sec:discuss-graph}
-
-% Where GNN outperforms RF, where RF suffices
-% Mention the weakness of single-connecting pixle: no weight was given to the length 
-% of a connection between two patches
-
-\textbf{TODO: Graph structure value.}
-
-\subsection{Limitations}
+\section{Limitations and Future Work}
 \label{sec:limitations}
 
-% Resolution, GBIF bias, temporal snapshot, no independent validation
+\subsection{Limitations}
+\label{sec:limit-detail}
+
+% Resolution vs computational cost
+% GBIF sampling bias (spatial, temporal, taxonomic)
+% Temporal snapshot — no climate change projection
+% No independent field validation
+% Single-pixel connections: no edge weighting by
+%   corridor width or resistance
+% SOM quantisation loss
 
 \textbf{TODO: Limitations.}
 
-\subsection{Future Work}
+\subsection{Future Directions}
 \label{sec:future}
 
-% Multi-species GNN, temporal dynamics, transfer learning
+% Multi-species GNN (joint embedding)
+% Temporal dynamics / climate scenarios
+% Transfer learning to other regions
+% Edge-weighted graph (resistance surfaces)
+% Lower occurrence threshold for rare species
 
 \textbf{TODO: Future directions.}

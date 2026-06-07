@@ -1,25 +1,132 @@
-\section{Results}
+\section{Results and Discussion}
 \label{sec:results}
+
+\subsection{Landscape Graph Construction}
+\label{sec:som-results}
+
+The SOM converged after approximately 150 training epochs on the
+400\,000-pixel subsample (80\,\% of 500\,000, with 20\,\% held out
+for validation). \Cref{fig:som-convergence} shows the evolution of
+validation quantisation error (QE) and topographic error (TE) across
+training stages. QE decreases steeply during the first 60 epochs and
+plateaus beyond epoch~150, confirming that additional training yields
+diminishing returns. Inspection of the codebook feature maps
+(\cref{fig:codebook-comparison}) corroborates this: at 150~epochs,
+the codebook displays smooth gradients with distinct regional
+structure, whereas at 200~epochs the features fragment into noise
+as the shrinking neighbourhood radius causes individual neurons to
+overfit local samples. While QE continues to decrease beyond
+150~epochs, the topographic error increases and the codebook loses
+the spatial coherence needed for meaningful landscape-type
+clustering. The final validation metrics
+(QE\,=\,1.54, TE\,=\,0.14) at 150~epochs thus represent the best
+trade-off between quantisation fidelity and topological
+preservation.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.75\linewidth]{som_convergence}
+  \caption{SOM convergence on the held-out validation set. Left
+  axis: quantisation error (mean $L_2$ distance to best-matching
+  unit). Right axis: topographic error (fraction of samples whose
+  two closest BMUs are non-adjacent on the grid). The dashed
+  vertical line marks the 150-epoch production threshold.}
+  \label{fig:som-convergence}
+\end{figure}
+
+Hierarchical clustering of the 4\,096 codebook vectors (Ward's
+linkage, cut at 30 clusters) partitioned the SOM grid into 30
+landscape types representing recurring environmental configurations
+across Switzerland. Connected-component labelling and merging of
+fragments smaller than 100~pixels produced the final landscape graph
+of \textbf{166\,464 patches} and \textbf{465\,833 edges}.
+
+The patch size distribution (\cref{fig:patch-stats}) shows a median
+of approximately \textbf{X}~pixels (${\sim}$\textbf{X}\,km$^2$),
+with a long tail towards larger contiguous patches in homogeneous
+terrain (e.g.\ alpine grassland, dense forest). The minimum enforced
+size of 100~pixels (${\sim}0.09$\,km$^2$) ensures that each patch is
+large enough to carry ecologically meaningful feature averages.
+
+The full-extent PCA-coloured patch map (\cref{fig:pca-patches}) reveals
+coherent biogeographic structure: similar colours emerge for the
+Swiss Plateau and the Po Valley south of the Alps, reflecting
+analogous lowland environmental profiles. High-alpine zones form a
+distinct cluster, while the southern Pre-Alps and Ticino group with
+the Jura arc, both of which are characterised by their southward slope and
+intermediate elevations.
+
+\Cref{fig:landscape-roi} zooms into a ${\sim}16 \times 16$\,km
+region north of Bern. Urban patches (Bern city centre) are clearly
+delineated. The Dählhölzli forest along the Aare, the Schärmenwald
+near Ittigen, and the Tiefenau peninsula emerge as distinct
+forest-type patches. Overall, when compared with local knowledge,
+clear ecological structures are visible at this resolution.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{patches_bern}
+  \caption{Landscape-type map for the Bern region. Colours
+  represent the 30 landscape types derived from hierarchical
+  clustering of the SOM codebook. The tessellation captures
+  transitions between forested hillsides, agricultural plains,
+  and built-up areas at 30\,m resolution.}
+  \label{fig:landscape-roi}
+\end{figure}
+
+\paragraph{Discussion.}
+The SOM-based discretisation serves a dual purpose: it reduces the
+${\sim}$160~million valid pixels to a tractable graph of 166\,464
+nodes while ensuring that patch boundaries follow ecological
+gradients rather than an arbitrary regular grid. This adaptive
+resolution means that patches are smaller in heterogeneous landscapes
+(e.g.\ valley floors with interspersed land cover) and larger in
+homogeneous terrain (e.g.\ high-alpine meadows), mirroring the
+spatial structure relevant to species distributions.
+
+A limitation of the adjacency-based edge construction is that
+connections between patches sharing only a single boundary pixel
+receive the same weight as connections along extensive shared
+borders. The graph therefore contains ``bridge'' edges representing
+tenuous spatial contact (e.g.\ two forest patches touching through a
+one-pixel corridor under a road). This is revisited in
+\cref{sec:limit-detail}.
 
 \subsection{Random Forest Baseline}
 \label{sec:rf-results}
 
-% Summary statistics across 3,756 species
-% AUC distribution, mean metrics table
+A per-species Random Forest served as the non-spatial baseline.
+Across 3\,751 species, the RF achieved a mean AUC of 0.838
+(median\,=\,0.834), with 99.4\,\% of species exceeding 0.7. Full
+metric summaries are provided in \cref{app:rf-baseline}. The RF's
+key limitation is its independence assumption: each patch is
+classified without regard to its landscape context, so the model
+cannot distinguish isolated habitat fragments from patches embedded
+in connected corridors.
 
-\textbf{TODO: RF results.}
-
-\subsection{GNN-SDM Performance}
+\subsection{SOM-GNN-SDM Performance}
 \label{sec:gnn-results}
 
 % Same metrics, GNN vs RF comparison
+% Where does graph structure help?
+% Where does RF suffice (generalists)?
 
-\textbf{TODO: GNN results and comparison.}
+\textbf{TODO: GNN results and comparison with RF.}
+
+\subsection{Architecture Search}
+\label{sec:arch-results}
+
+% Why wider networks, fewer hops for plants vs animals
+% Link back to Wu et al. choices and our adaptation
+
+\textbf{TODO: Architecture discussion.}
 
 \subsection{Common vs.\ Vulnerable Species}
 \label{sec:species-comparison}
 
 % Deep dive on 12 species (6 common + 6 vulnerable)
+% Overprediction discussion: sampling bias, SDM purpose
+% Specialists vs generalists performance difference
 
 \textbf{TODO: Species-level analysis.}
 
@@ -27,5 +134,15 @@
 \label{sec:maps}
 
 % Example maps for selected species
+% Visual validation against known ranges
 
 \textbf{TODO: Map figures.}
+
+\subsection{Conservation Prioritisation}
+\label{sec:conservation-results}
+
+% Circuit-theory connectivity results
+% Gap analysis: priority areas vs protected areas
+% Quantification of conservation gaps
+
+\textbf{TODO: Conservation application results.}
