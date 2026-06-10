@@ -33,3 +33,4 @@ som_plots/
 *.index
 *.csv
 selected_features.json
+!baseline_rf_results.csv
