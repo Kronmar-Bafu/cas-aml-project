@@ -9,18 +9,22 @@ import numpy as np
 import pandas as pd
 
 
-def load_species_patches(config, min_records=100, s3=None):
+def load_species_patches(config, min_patches=20, max_coord_uncertainty=1000, s3=None):
     """
     Load GBIF occurrences, map them to landscape patches, and return
     a dict of {species_name: set(patch_ids)} for all species with
-    at least *min_records* GBIF records.
+    at least *min_patches* unique presence patches.
 
     Parameters
     ----------
     config : module
         Project config with GBIF_PARQUET and S3_PROCESSED paths.
-    min_records : int
-        Minimum GBIF records for a species to be included.
+    min_patches : int
+        Minimum number of unique presence patches for a species to be included.
+    max_coord_uncertainty : float | None
+        Maximum coordinate uncertainty in metres. Records with
+        coordinateuncertaintyinmeters > this value are excluded.
+        Set to None to disable filtering (use all records).
     s3 : s3fs.S3FileSystem | None
         Optional pre-configured filesystem.
 
@@ -47,7 +51,18 @@ def load_species_patches(config, min_records=100, s3=None):
     # Load GBIF
     gbif = pd.read_parquet(config.GBIF_PARQUET, storage_options={'anon': False})
 
-    # Vectorized mapping: all records → patch IDs
+    # Filter by coordinate uncertainty if requested
+    if max_coord_uncertainty is not None:
+        n_before = len(gbif)
+        gbif = gbif[
+            gbif['coordinateuncertaintyinmeters'].le(max_coord_uncertainty)
+        ].copy()
+        n_after = len(gbif)
+        print(f'Coordinate uncertainty filter (<={max_coord_uncertainty}m): '
+              f'{n_before:,} -> {n_after:,} records '
+              f'({n_after/n_before*100:.1f}% retained)')
+
+    # Vectorized mapping: all records -> patch IDs
     rows, cols = rowcol(transform, gbif['decimallongitude'].values,
                         gbif['decimallatitude'].values)
     rows, cols = np.array(rows), np.array(cols)
@@ -66,11 +81,11 @@ def load_species_patches(config, min_records=100, s3=None):
     species_patches = {
         sp: set(patches)
         for sp, patches in species_patch_groups.items()
-        if species_counts.get(sp, 0) >= min_records
+        if len(patches) >= min_patches
     }
 
     print(f'GBIF records: {len(gbif):,}')
-    print(f'Species with >= {min_records} records: {len(species_patches):,}')
+    print(f'Species with >= {min_patches} presence patches: {len(species_patches):,}')
 
     return species_patches, species_counts
 
@@ -101,7 +116,7 @@ def post_scale(X, feature_names):
     Domain-specific adjustments applied after RobustScaler.
 
     1. Clip forest_edge_dist to [-5, 5] (beyond ~500m is ecologically equivalent)
-    2. Boost LC fractions ×3 (small IQR since most pixels are 0 or 1)
+    2. Boost LC fractions x3 (small IQR since most pixels are 0 or 1)
     3. Global clip to [-5, 5] to tame extreme outliers
 
     Parameters
@@ -113,7 +128,7 @@ def post_scale(X, feature_names):
 
     Returns
     -------
-    np.ndarray — post-processed copy of X.
+    np.ndarray -- post-processed copy of X.
     """
     X = X.copy()
     if 'forest_edge_dist' in feature_names:
