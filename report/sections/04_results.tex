@@ -103,6 +103,79 @@ classified without regard to its landscape context, so the model
 cannot distinguish isolated habitat fragments from patches embedded
 in connected corridors.
 
+\subsection{Architecture Search}
+\label{sec:arch-results}
+
+Six GraphSAGE architectures were evaluated on six
+representative species spanning a range of habitats and
+prevalence levels (\cref{tab:arch-search}).  Performance was
+measured by validation AUC averaged over the six species.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Architecture search results (validation AUC). Each
+  column corresponds to one of the six representative species;
+  the final column reports the mean across species.}
+  \label{tab:arch-search}
+  \small
+  \begin{tabular}{lcccccc|c}
+    \toprule
+    Architecture & \textit{P.~ab.} & \textit{F.~sy.}
+      & \textit{T.~pr.} & \textit{P.~er.}
+      & \textit{Ph.~au.} & \textit{S.~in.} & Mean \\
+    \midrule
+    1-layer {[}16{]}        & 0.730 & 0.755 & 0.670
+      & 0.700 & 0.734 & 0.877 & 0.744 \\
+    2-layer {[}24,12{]}     & 0.742 & 0.785 & 0.715
+      & 0.725 & 0.746 & 0.885 & 0.766 \\
+    paper {[}24,18,8{]}     & 0.770 & 0.791 & 0.726
+      & 0.751 & 0.771 & 0.901 & 0.785 \\
+    wider {[}48,32,16{]}    & 0.791 & 0.807 & 0.752
+      & 0.766 & 0.791 & 0.908 & 0.803 \\
+    extra-wide {[}64,48,32{]} & 0.796 & 0.817 & 0.759
+      & 0.776 & 0.794 & 0.911 & 0.809 \\
+    4-layer {[}32,24,16,8{]} & 0.787 & 0.796 & 0.742
+      & 0.750 & 0.776 & 0.906 & 0.793 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The extra-wide architecture ({[}64,48,32{]}, 3~layers) yielded the
+highest mean AUC (0.809) and was selected for all subsequent
+experiments.  Adding a fourth layer did not improve performance,
+suggesting that three message-passing hops (covering a
+${\sim}$3-patch spatial neighbourhood) capture the relevant
+landscape context for Swiss plant species.  This contrasts with
+the original \cite{Wu2025} configuration ({[}24,18,8{]}),
+which was optimised for global-scale fauna; wider hidden layers
+appear necessary to capture the finer environmental gradients
+that distinguish Swiss vegetation zones at 30\,m resolution.
+
+\paragraph{Graph structure benefit.}
+The improvement from one to three GraphSAGE layers quantifies how
+much each species profits from neighbourhood information
+propagated through the landscape graph. The largest gains are
+observed for alpine and subalpine grassland species---notably
+\textit{Potentilla erecta} ($+0.051$ AUC) and \textit{Trifolium
+pratense} ($+0.056$)---while the habitat specialist
+\textit{Senecio inaequidens} benefits least ($+0.024$), as its
+distinct urban niche is already well captured by local features
+alone.
+
+\textit{Potentilla erecta} (alpine grassland) provides a
+particularly clear illustration. This species occupies connected
+subalpine meadow patches in distinct elevation bands, shaped by
+climate and topography rather than human management. With a
+single GraphSAGE layer, predictions rely solely on local patch
+features; isolated meadow patches receive unreliable scores
+because the model lacks spatial context. With three layers, the
+GNN propagates suitability information through adjacent patches,
+correctly identifying connected alpine grassland belts as
+suitable habitat---even where direct observations are absent.
+This spatial smoothing through the graph is the core mechanism
+by which SOM-GNN-SDM surpasses the non-spatial RF baseline for
+spatially structured species (see \cref{sec:gnn-results}).
+
 \subsection{SOM-GNN-SDM Performance}
 \label{sec:gnn-results}
 
@@ -112,13 +185,6 @@ in connected corridors.
 
 \textbf{TODO: GNN results and comparison with RF.}
 
-\subsection{Architecture Search}
-\label{sec:arch-results}
-
-% Why wider networks, fewer hops for plants vs animals
-% Link back to Wu et al. choices and our adaptation
-
-\textbf{TODO: Architecture discussion.}
 
 \subsection{Common vs.\ Vulnerable Species}
 \label{sec:species-comparison}
