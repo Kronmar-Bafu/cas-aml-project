@@ -1,12 +1,29 @@
-\documentclass[11pt,a4paper]{article}
+\documentclass[
+  11pt,
+  a4paper,
+  headings=normal,
+  parskip=half,
+  bibliography=totoc
+]{scrartcl}
 
 % --- Encoding & fonts ---
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage{lmodern}
+\usepackage{mathpazo}           % Palatino for body text
+\usepackage[scaled=0.92]{helvet}% Helvetica for headings
+\usepackage{courier}            % monospace font
+\linespread{1.05}               % slightly opened line spacing
+
+% --- KOMA heading style ---
+\addtokomafont{disposition}{\sffamily}
+\addtokomafont{caption}{\small}
+\setkomafont{captionlabel}{\sffamily\bfseries}
 
 % --- Page geometry ---
-\usepackage[margin=2.5cm]{geometry}
+\usepackage[
+  margin=2.5cm,
+  headheight=14pt
+]{geometry}
 
 % --- Language ---
 \usepackage[english]{babel}
@@ -26,11 +43,21 @@
 \usepackage{amsmath,amssymb}
 
 % --- Bibliography ---
-\usepackage[backend=biber,style=authoryear,maxcitenames=2,natbib=true]{biblatex}
+\usepackage[
+  backend=biber,
+  style=authoryear,
+  maxcitenames=2,
+  natbib=true
+]{biblatex}
 \addbibresource{references.bib}
 
 % --- Hyperlinks & cross-references ---
-\usepackage[colorlinks=true,linkcolor=blue!60!black,citecolor=green!50!black,urlcolor=blue!70!black]{hyperref}
+\usepackage[
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  citecolor=green!50!black,
+  urlcolor=blue!70!black
+]{hyperref}
 \usepackage[capitalise,noabbrev]{cleveref}
 
 % --- Code listings (optional, for appendix) ---
@@ -40,13 +67,20 @@
 % --- Misc ---
 \usepackage{xcolor}
 \usepackage{enumitem}
-\usepackage[section]{placeins}  % keep floats within their section
+\usepackage[section]{placeins}  % keep floats in their section
+
+% --- Header/footer ---
+\usepackage{scrlayer-scrpage}
+\pagestyle{scrheadings}
+\automark[section]{section}
 
 % --- Title ---
-\title{GNN-SDM: Species Distribution Modelling with Graph Neural Networks for Swiss Flora at 30\,m Resolution}
+\title{GNN-SDM: Species Distribution Modelling\\
+  with Graph Neural Networks\\
+  for Swiss Flora at 30\,m Resolution}
 \author{
-  Marco Kronenberg \\
-  \texttt{marco.kronenberg@bafu.admin.ch}
+  Marco Kronenberg \\[0.3em]
+  {\normalsize\texttt{marco.kronenberg@bafu.admin.ch}}
 }
 \date{\today}
 
@@ -57,8 +91,21 @@
 \thispagestyle{empty}
 
 \begin{abstract}
-Traditional species distribution models treat occurrences as independent points, ignoring the spatial structure of landscapes that governs habitat connectivity and species dispersal. We adapt the GNN-SDM framework \citep{Wu2025} to Swiss vascular plants at 30\,m resolution, constructing a landscape graph of 166,464 patches linked by 465,833 adjacency edges. Using a GraphSAGE architecture tuned for flora, we model habitat suitability for 3,751 species and compare against a Random Forest baseline. [Results summary to be added.]
+Traditional species distribution models treat occurrences as
+independent points, ignoring the spatial structure of landscapes.
+We adapt the SOM-GNN-SDM framework \citep{Wu2025} to Swiss vascular
+plants at 30\,m resolution, constructing a landscape graph of
+166,464 patches from 12 environmental features via Self-Organising
+Map clustering. A GraphSAGE architecture tuned for sessile flora
+models habitat suitability for 2,696 species, outperforming a
+Random Forest baseline for 85.3\,\% of species (mean AUC 0.912
+vs.\ 0.874). Circuit-theory connectivity analysis across 241
+nationally threatened species reveals that 41\,\% of high-priority
+habitat---patches combining high suitability with critical
+corridor function---currently lacks formal protection. The pipeline
+identifies spatially explicit conservation gaps.
 \end{abstract}
+
 
 \newpage
 \tableofcontents

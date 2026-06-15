@@ -80,7 +80,7 @@ A patch surrounded by suitable habitat is more valuable (connectivity, dispersal
 \begin{itemize}
   \item Wu et al.: uniform 10\textquotesingle{} grid ($\sim$18.5\,km cells), continental scale
   \item Ours: SOM-derived patches from 30\,m pixels
-  \item 3,756 plant species from GBIF, 21 environmental features
+  \item 2,696 plant species from GBIF, 21 environmental features
 \end{itemize}
 
 \end{frame}
@@ -224,9 +224,9 @@ class GNNSDM(torch.nn.Module):
 \textbf{What's done:}
 \begin{itemize}\setlength\itemsep{1pt}
   \item[\checkmark] Full pipeline: data $\rightarrow$ features $\rightarrow$ SOM $\rightarrow$ patches $\rightarrow$ graph $\rightarrow$ GNN
-  \item[\checkmark] 3,751 species with suitability scores
+  \item[\checkmark] 2,696 species with suitability scores
   \item[\checkmark] RF baseline for comparison (same patches, no graph)
-  \item[\checkmark] IUCN threat status for all species
+  \item[\checkmark] Swiss Red List threat status for all species
 \end{itemize}
 
 \medskip
@@ -247,7 +247,7 @@ priority_score = (mean_suitability + mean_current_flow) / 2
 \textbf{Open questions:}
 \begin{itemize}\setlength\itemsep{1pt}
   \item Does GNN help more for rare species? (connectivity matters more?)
-  \item Can we lower the 100-record threshold for threatened species?
+  \item Can we lower the 20-patch threshold for threatened species?
 \end{itemize}
 
 \end{frame}

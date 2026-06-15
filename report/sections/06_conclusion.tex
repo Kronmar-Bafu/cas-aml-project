@@ -1,13 +1,77 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-% Summary of key findings
-% Practical implications for Swiss conservation
+Graph neural networks can effectively model habitat suitability for Swiss 
+flora at 30\,m resolution. By encoding the landscape as a graph of
+166,464 ecologically homogeneous patches linked by spatial
+adjacency, the SOM-GNN-SDM framework captures spatial context
+that traditional per-site models cannot represent.
 
-\textbf{TODO: Write conclusion.}
+Three main results:
+
+\begin{enumerate}
+  \item \textbf{Graph structure improves predictions.} The
+    GNN-SDM outperforms the Random Forest baseline for
+    85.3\,\% of 2,696 species (mean AUC 0.912 vs 0.874,
+    mean TSS 0.583 vs 0.430), with the largest gains for
+    species whose distributions depend on landscape
+    connectivity rather than local features alone.
+
+  \item \textbf{The model generalises to rare species.}
+    Nationally threatened species achieve comparable or
+    higher discrimination (AUC 0.874, TSS 0.708) than
+    common species, confirming that the framework is
+    suitable for conservation applications despite lower
+    observation density.
+
+  \item \textbf{Significant protection gaps exist.}
+    Circuit-theory connectivity analysis across 241
+    threatened species reveals that 41\,\% of
+    high-priority habitat patches---locations that are both
+    suitable habitat and critical connectivity
+    corridors---currently lack any formal protection.
+\end{enumerate}
+
+These results should be interpreted as a methodological
+proof-of-concept rather than a direct policy recommendation.
+Conservation decisions involve many factors beyond ecology:
+a landscape patch identified as a critical ecological corridor
+may simultaneously be productive farmland, infrastructure, or
+subject to competing land-use interests. The priority surface
+identifies \emph{where} ecological connectivity is most
+vulnerable, but the question of \emph{whether} and \emph{how}
+to act requires integration with socio-economic constraints,
+stakeholder consultation, and on-the-ground verification that
+lie beyond the scope of this analysis.
+
+The full pipeline---from raw satellite and climate data to
+actionable conservation priority maps---runs end-to-end in
+under 10 hours of compute time and is readily transferable to
+other regions or taxa. As Switzerland continues to develop its
+ecological infrastructure strategy, data-driven approaches like SOM-GNN-SDM 
+can complement expert assessment and field surveys with spatially explicit, 
+reproducible evidence.
 
 \section*{Acknowledgements}
 
-% CAS programme, data providers, compute resources
+This work was conducted as part of the Certificate of Advanced
+Studies in Applied Machine Learning at the University of Bern. 
+Computational resources (AWS SageMaker GPU
+instances) were provided by the Federal Office for the
+Environment (FOEN).
 
-\textbf{TODO: Acknowledgements.}
+This report does not constitute a policy recommendation of the
+FOEN. While the author is employed at FOEN and the programme
+was partially funded by FOEN, this work was carried out
+independently as an academic case study exploring the
+application of machine learning to conservation planning. Any
+interpretation of results in a policy context would require
+additional validation, stakeholder engagement, and integration
+with existing planning instruments.
+
+AI assistance was used in the creation of this report as well
+as in the creation of the code used.
+
+\paragraph{Code availability.}
+The full analysis pipeline (notebooks 00--32) is available at
+\url{https://github.com/kronmar-bafu/cas-aml-project}.

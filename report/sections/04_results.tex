@@ -18,9 +18,8 @@ neighbourhood radius causes individual neurons to overfit local
 samples. While QE continues to decrease beyond 150~epochs, the
 topographic error increases and the codebook loses the spatial
 coherence needed for meaningful landscape-type clustering. The
-final validation metrics (QE\,=\,1.54, TE\,=\,0.14) at 150~epochs
-thus represent the best trade-off between quantisation fidelity and
-topological preservation.
+final validation metrics (QE\,=\,1.54, TE\,=\,0.14) at 150~epochs mark the 
+best trade-off between quantisation fidelity and topological preservation.
 
 \begin{figure}[htbp]
   \centering
@@ -45,7 +44,7 @@ of 340~pixels (${\sim}0.31$\,km$^2$), with a long tail towards
 larger contiguous patches in homogeneous terrain (e.g.\ alpine
 grassland, dense forest). The minimum enforced size of 100~pixels
 (${\sim}0.09$\,km$^2$) ensures that each patch is large enough to
-carry ecologically meaningful feature averages.
+carry reliable feature averages.
 
 The full-extent PCA-coloured patch map (\cref{fig:pca-patches}) reveals
 coherent biogeographic structure: similar colours emerge for the
@@ -59,8 +58,7 @@ intermediate elevations.
 region north of Bern. Urban patches (Bern city centre) are clearly
 delineated. The Dählhölzli forest along the Aare, the Schärmenwald
 near Ittigen, and the Tiefenau peninsula emerge as distinct
-forest-type patches. Overall, when compared with local knowledge,
-clear ecological structures are visible at this resolution.
+forest-type patches. These structures match local knowledge of the area well.
 
 \begin{figure}[htbp]
   \centering
@@ -73,7 +71,6 @@ clear ecological structures are visible at this resolution.
   \label{fig:landscape-roi}
 \end{figure}
 
-\paragraph{Discussion.}
 The SOM-based discretisation serves a dual purpose: it reduces the
 ${\sim}$160~million valid pixels to a tractable graph of 166\,464
 nodes while ensuring that patch boundaries follow ecological
@@ -95,13 +92,13 @@ one-pixel corridor under a road). This is revisited in
 \label{sec:rf-results}
 
 A per-species Random Forest served as the non-spatial baseline.
-Across 3\,751 species, the RF achieved a mean AUC of 0.838
-(median\,=\,0.834), with 99.4\,\% of species exceeding 0.7. Full
-metric summaries are provided in \cref{app:rf-baseline}. The RF's
-key limitation is its independence assumption: each patch is
-classified without regard to its landscape context, so the model
-cannot distinguish isolated habitat fragments from patches embedded
-in connected corridors.
+Across 2\,696 species, the RF achieved a mean AUC of 0.874
+(median\,=\,0.877), with 99.3\,\% of species exceeding 0.7 and
+91.6\,\% exceeding 0.8. Full metric summaries are provided in
+\cref{app:rf-baseline}. The RF's key limitation is its
+independence assumption: each patch is classified without regard
+to its landscape context, so the model cannot distinguish isolated
+habitat fragments from patches embedded in connected corridors.
 
 \subsection{Architecture Search}
 \label{sec:arch-results}
@@ -155,15 +152,15 @@ that distinguish Swiss vegetation zones at 30\,m resolution.
 The improvement from one to three GraphSAGE layers quantifies how
 much each species profits from neighbourhood information
 propagated through the landscape graph. The largest gains are
-observed for alpine and subalpine grassland species---notably
+observed for alpine and subalpine grassland species (notably
 \textit{Potentilla erecta} ($+0.051$ AUC) and \textit{Trifolium
-pratense} ($+0.056$)---while the habitat specialist
+pratense} ($+0.056$)) while the habitat specialist
 \textit{Senecio inaequidens} benefits least ($+0.024$), as its
 distinct urban niche is already well captured by local features
 alone.
 
 \textit{Potentilla erecta} (alpine grassland) provides a
-particularly clear illustration. This species occupies connected
+good illustration. This species occupies connected
 subalpine meadow patches in distinct elevation bands, shaped by
 climate and topography rather than human management. With a
 single GraphSAGE layer, predictions rely solely on local patch
@@ -171,43 +168,232 @@ features; isolated meadow patches receive unreliable scores
 because the model lacks spatial context. With three layers, the
 GNN propagates suitability information through adjacent patches,
 correctly identifying connected alpine grassland belts as
-suitable habitat---even where direct observations are absent.
-This spatial smoothing through the graph is the core mechanism
-by which SOM-GNN-SDM surpasses the non-spatial RF baseline for
-spatially structured species (see \cref{sec:gnn-results}).
+suitable habitat.
 
 \subsection{SOM-GNN-SDM Performance}
 \label{sec:gnn-results}
 
-% Same metrics, GNN vs RF comparison
-% Where does graph structure help?
-% Where does RF suffice (generalists)?
+The production GNN-SDM was trained for all 2,696 qualifying
+species using the extra-wide GraphSAGE architecture
+({[}64,48,32{]}). Training completed in 5.7~hours of GPU time
+(mean 7.6\,s and 231~epochs per species). Early stopping
+triggered for 90.4\,\% of species before reaching the 500-epoch
+maximum (\cref{app:gnn-training}).
 
-\textbf{TODO: GNN results and comparison with RF.}
+\paragraph{Discrimination.}
+Across all 2,696 species, the GNN-SDM achieved a mean evaluation
+AUC of \textbf{0.912} (median\,=\,0.923, $\sigma$\,=\,0.055),
+with 90.4\,\% of species exceeding 0.85. The validation AUC used
+for early stopping averaged 0.886, with 2,437 species
+(90.4\,\%) above~0.8 and only 14 species below~0.6.
+
+\paragraph{TSS and classification skill.}
+The True Skill Statistic (defined as
+sensitivity~$+$~specificity~$-$~1 and independent of
+prevalence) provides a threshold-dependent measure of
+classification accuracy. At the threshold maximising TSS, the
+GNN-SDM achieved a mean TSS of \textbf{0.583}
+($\Delta$\,=\,+0.153 over RF). This indicates that the model
+correctly identifies both presence and absence patches well
+above chance, despite the extreme class imbalance (median
+species prevalence ${\sim}$0.8\,\% of patches).
+
+\paragraph{Comparison with RF baseline.}
+\Cref{tab:gnn-rf} summarises the head-to-head comparison.  The
+GNN-SDM outperforms the RF on every metric, with the largest
+gains in recall ($+$0.137), F1 ($+$0.126), and TSS ($+$0.153).
+On a per-species basis, the GNN achieves higher AUC than the RF
+for \textbf{2,299 of 2,696 species (85.3\,\%)}.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Mean evaluation metrics across 2,696 species for the
+  Random Forest baseline and SOM-GNN-SDM. $\Delta$ denotes the
+  GNN improvement.}
+  \label{tab:gnn-rf}
+  \small
+  \begin{tabular}{lccc}
+    \toprule
+    Metric & RF & GNN & $\Delta$ \\
+    \midrule
+    AUC       & 0.874 & 0.912 & +0.038 \\
+    Accuracy  & 0.832 & 0.878 & +0.046 \\
+    Precision & 0.733 & 0.820 & +0.087 \\
+    Recall    & 0.481 & 0.618 & +0.137 \\
+    F1        & 0.561 & 0.688 & +0.126 \\
+    MCC       & 0.498 & 0.640 & +0.142 \\
+    TSS       & 0.430 & 0.583 & +0.153 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+he largest gains are in recall and TSS. The RF tends toward conservative predictions 
+(high precision, low recall), missing many true presence patches that the GNN 
+recovers through graph propagation.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{gnn_vs_rf}
+  \caption{Per-species AUC comparison between SOM-GNN-SDM and
+  Random Forest baseline across 2,696 species. Points above the
+  diagonal indicate species where the GNN outperforms the RF
+  (85.3\,\% of species). Colour indicates observation
+  prevalence.}
+  \label{fig:gnn-vs-rf}
+\end{figure}
+
+Species with spatially structured distributions benefit most from neighbourhood
+aggregation, while widespread generalists show smaller gains
+because their habitat signal is already well captured by local
+features alone. The RF remains a strong baseline
+(AUC\,=\,0.874): the 12 selected features carry strong predictive power even 
+without spatial context. The GNN primarily improves predictions at patch 
+boundaries and in fragmented landscapes.
+
+\textit{Potentilla erecta} (\cref{fig:potentilla}) illustrates
+the difference: the GNN produces sharp habitat boundaries along
+connected alpine grassland belts, while the RF assigns diffuse
+moderate scores across the entire elevation band.
 
 
-\subsection{Common vs.\ Vulnerable Species}
-\label{sec:species-comparison}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{potentilla_erecta}
+  \caption{Habitat suitability map for \textit{Potentilla
+  erecta} comparing RF (left) and GNN-SDM (right). The GNN
+  produces sharper habitat delineation along connected alpine
+  grassland belts, leveraging graph structure to resolve
+  ambiguous patches at forest--meadow transitions.}
+  \label{fig:potentilla}
+\end{figure}
 
-% Deep dive on 12 species (6 common + 6 vulnerable)
-% Overprediction discussion: sampling bias, SDM purpose
-% Specialists vs generalists performance difference
+\paragraph{Common vs.\ threatened species.}
+A detailed evaluation on 12 selected species (6~common,
+6~vulnerable) shows no systematic performance gap: vulnerable
+species achieve a mean AUC of 0.874 and TSS of 0.708, compared
+to 0.863 and 0.604 for common species
+(\cref{fig:rare-common}). The slightly higher scores for
+vulnerable species reflect their narrower ecological niches,
+which are easier to discriminate from the landscape background.
 
-\textbf{TODO: Species-level analysis.}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{gnn_rare_common}
+  \caption{GNN-SDM performance for 6 common vs.\ 6 vulnerable
+  species. Vulnerable species achieve comparable or higher AUC
+  and TSS despite having far fewer observation patches,
+  confirming the model generalises to rare species.}
+  \label{fig:rare-common}
+\end{figure}
 
-\subsection{Habitat Suitability Maps}
-\label{sec:maps}
-
-% Example maps for selected species
-% Visual validation against known ranges
-
-\textbf{TODO: Map figures.}
 
 \subsection{Conservation Prioritisation}
 \label{sec:conservation-results}
 
-% Circuit-theory connectivity results
-% Gap analysis: priority areas vs protected areas
-% Quantification of conservation gaps
+The circuit-theory connectivity analysis was applied to 285
+nationally threatened species (Swiss Red List categories CR,
+EN, VU, NT) with $\geq 50$ presence patches. After excluding
+44 species with insufficient connectivity structure (zero mean
+current), 241 species (2~CR, 17~EN, 77~VU, 145~NT; 358
+weight-units) contributed to the multi-species priority surface.
 
-\textbf{TODO: Conservation application results.}
+\paragraph{Protection baseline.}
+Restricting the analysis to the 65,298 patches within Swiss
+territory, the current protected-area network covers
+28.6\,\% of patches: 1.7\,\% under strict protection
+(IUCN categories Ia--III) and 21.4\,\% under managed
+protection (categories IV--VI). The remaining 71.4\,\%
+(46,603 patches) lack any formal protection status. Note that
+this analysis considers a patch as protected if at least one
+of its constituent pixels overlaps with a protected area
+polygon---a generous criterion that may overstate actual
+coverage.
+
+\paragraph{Gap analysis.}
+The priority surface, combining threat-weighted suitability
+and connectivity, identifies patches that are simultaneously
+important habitat and critical corridor links for threatened
+species. \Cref{fig:gap-ch} shows the national-scale priority
+map overlaid with existing protected areas.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.9\linewidth]{gap_ch}
+  \caption{Multi-species conservation priority surface for
+  Switzerland, aggregated across 241 nationally threatened
+  species. High-priority patches (warm colours) combine high
+  GNN-predicted habitat suitability with critical
+  circuit-theory connectivity. Existing protected areas are
+  outlined.}
+  \label{fig:gap-ch}
+\end{figure}
+
+Among the top-5\,\% priority patches (3,265 patches):
+\begin{itemize}
+  \item 58.9\,\% fall within some protected area
+    (4.2\,\% strictly, 43.5\,\% managed only),
+  \item \textbf{41.1\,\% (1,342 patches) are entirely
+    unprotected}: these represent the primary conservation
+    gaps.
+\end{itemize}
+
+Focusing on the top-1\,\% critical corridor patches (653
+patches), protection coverage improves slightly: 6.4\,\%
+strict, 58.3\,\% managed, but \textbf{25.7\,\% (168 patches)
+remain unprotected}. These 168 patches represent strong
+connectivity links between isolated populations of threatened
+species that currently have no formal protection.
+
+\paragraph{Regional patterns.}
+The spatial distribution of conservation gaps is not uniform
+across Switzerland. \Cref{fig:gap-region} illustrates four
+contrasting regions:
+
+\begin{itemize}
+  \item \textbf{Engadin:} strong alignment between existing
+    protected areas and priority patches: the extensive
+    national park and surrounding reserves effectively cover
+    critical connectivity corridors.
+  \item \textbf{Seeland:} poor match: high-priority wetland
+    and agricultural transition patches largely fall outside
+    existing protection, despite their importance for
+    threatened lowland flora.
+  \item \textbf{Les Franches-Montagnes:} partial overlap:
+    some priority grassland corridors are captured by
+    landscape protection areas, but key connecting patches
+    remain unprotected.
+  \item \textbf{Surselva (west of Chur):} notable
+    mismatch: several protected areas in this region do not
+    coincide with high-priority patches, while critical
+    corridors identified by the model lie outside existing
+    designations.
+\end{itemize}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.9\linewidth]{gap_region}
+  \caption{Regional detail of four contrasting areas showing
+  the alignment (or mismatch) between the priority surface
+  and existing protected areas. Engadin shows good coverage,
+  while Seeland and Surselva reveal significant conservation
+  gaps where high-priority habitat lacks protection.}
+  \label{fig:gap-region}
+\end{figure}
+
+The gap analysis reveals two categories of conservation action:
+(1)~168 unprotected critical corridor patches requiring new
+protection designation, and (2)~381 patches under managed
+protection (category~IV--VI) that may warrant upgrading to
+stricter status given their connectivity importance. The
+finding that 41\,\% of high-priority habitat lacks any
+protection aligns with the broader assessment that
+Switzerland's ecological infrastructure remains incomplete
+\citep{FOEN2025}.
+
+The regional heterogeneity shows that protection
+effectiveness cannot be assessed by area alone. The Surselva
+example shows that protected areas optimised for landscape
+aesthetics or recreation do not necessarily capture the
+ecological corridors critical for threatened plant species.
+Conversely, the Engadin demonstrates that well-placed
+protection can effectively cover connectivity needs.

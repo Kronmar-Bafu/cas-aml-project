@@ -29,8 +29,7 @@ forest-edge distance clipped to $[-5, 5]$).
 The SOM was trained for 150 epochs with a neighbourhood radius decaying from 64 
 to 16 and a learning rate decaying from 0.05 to 0.016. Convergence was assessed 
 on a held-out 20\% validation set using quantisation error (QE) and topographic 
-error (TE); 150 epochs represented the sweet spot beyond which improvements were
-marginal.
+error (TE).
 
 After training, the codebook vectors were hierarchically clustered using Ward's 
 linkage, and the dendrogram was cut to yield 30 landscape types. Every valid 
@@ -63,9 +62,10 @@ environmental features; no edge weights were used.
 \subsection{Baseline: Random Forest}
 \label{sec:rf}
 
-A per-species Random Forest \citep{Breiman2001} classifier served as the 
-non-spatial baseline. For each of the 3,756 qualifying species ($\geq 100$ GBIF 
-records), the following procedure was applied:
+A per-species Random Forest \citep{Breiman2001} classifier served
+as the non-spatial baseline. For each of the 2,696 qualifying
+species ($\geq 20$ presence patches), the following procedure was
+applied:
 
 \begin{enumerate}
     \item \textbf{Presence labels.} GBIF occurrence coordinates were mapped to 
@@ -83,7 +83,8 @@ records), the following procedure was applied:
 Hyperparameter tuning was performed via \texttt{GridSearchCV} on the same 
 six representative species used for the GNN architecture search, covering 
 diverse habitat types across Switzerland. The best hyperparameters from 
-this limited tuning were then applied uniformly to all 3,756 species.
+this limited tuning were then applied uniformly to all
+2,696 species.
 
 \subsection{GNN-SDM}
 \label{sec:gnn}
@@ -156,7 +157,8 @@ For each species, the GNN-SDM was trained independently using the following pipe
     random strategy ensures a fair comparison with the RF baseline (which uses 
     same pseudo-absence protocol) and proved more robust across the full species 
     set, avoiding the computational overhead and occasional instability of 
-    fitting a kernel SVM on high-dimensional patch features for each of 3,756 species.
+    fitting a kernel SVM on high-dimensional patch features for
+    each of 2,696 species.
 
     \item \textbf{PageRank weighting.}
     Presence patches were weighted by their PageRank centrality in the landscape 
@@ -201,10 +203,12 @@ recall, F1, MCC, Cohen's $\kappa$, TSS) with a classification threshold of 0.5.
 \subsubsection{Computational Setup}
 \label{sec:compute}
 
-Production training of all 3,756 species was executed as an AWS SageMaker 
-Training Job on a GPU instance (NVIDIA GPU, CUDA-accelerated). The job supported 
-checkpointing for spot-instance interruptions and completed in approximately 50 
-minutes of GPU time. Node features were standardised (zero mean, unit variance) 
+Production training of all 2,696 species was executed as an AWS
+SageMaker Training Job on a GPU instance (NVIDIA GPU,
+CUDA-accelerated). The job supported checkpointing for
+spot-instance interruptions and completed in approximately 5.7
+hours of GPU time (mean 7.6\,s per species, 231 epochs on
+average). Node features were standardised (zero mean, unit variance) 
 before training, and the full graph (166,464 nodes, 931,666 directed edges) was 
 loaded onto the GPU for efficient message passing.
 
@@ -219,7 +223,7 @@ areas to identify protection gaps.
 \subsubsection{Complementarity of Suitability and Connectivity}
 \label{sec:complementarity}
 
-A natural question arises as to whether the circuit-theory step is redundant 
+One might ask whether the circuit-theory step is redundant 
 given that GraphSAGE already incorporates neighbourhood information during 
 message passing. The two components are, however, fundamentally complementary:
 
@@ -240,9 +244,8 @@ These two perspectives are orthogonal. A patch may have moderate suitability
 (GNN score ${\sim}0.3$) yet carry very high current because it lies in the only 
 traversable corridor between two populations. Conversely, a patch in the core 
 of a large population may have high suitability but low current because 
-alternative paths exist. Conservation action is most impactful at patches that 
-score highly on \emph{both} dimensions---places that are simultaneously good 
-habitat and vital connectivity links.
+alternative paths exist. The highest conservation value lies a patches that score
+highly on both dimensions.
 
 \subsubsection{Circuit-Theory Connectivity}
 \label{sec:circuit}
@@ -276,40 +279,62 @@ cannot be meaningfully assessed.
 \subsubsection{Species Selection and Filtering}
 \label{sec:species-selection}
 
-The gap analysis targets threatened species (IUCN categories NT, VU, EN, CR) 
-that have both GNN suitability scores and sufficient spatial structure for 
-circuit analysis. Two filters are applied:
+The gap analysis targets nationally threatened species according
+to the Swiss Red Lists of vascular plants
+\citep{InfoFlora2016} and bryophytes \citep{InfoFlora2022},
+published by Info Flora on behalf of BAFU (Federal Office for
+the Environment). These lists apply IUCN criteria at the
+\emph{national} level, as a species can be globally Least Concern
+yet nationally Critically Endangered in Switzerland. 
+
+Of the 2,696 GNN-trained species, 489 carry a nationally
+threatened status (CR, EN, VU, or NT). Two additional filters
+are applied:
 
 \begin{enumerate}
-    \item \textbf{Non-native exclusion.} Species whose IUCN threat status 
-    refers to their native range outside Switzerland (e.g.\ \textit{Ginkgo 
-    biloba}, \textit{Sequoiadendron giganteum}) are excluded, as their 
-    occurrences in Switzerland represent planted individuals in parks and 
-    gardens rather than populations requiring habitat connectivity.
+    \item \textbf{Minimum spatial structure.} Only species with
+    $\geq 50$ presence patches are retained, ensuring sufficient
+    spatial extent for meaningful circuit-theory analysis. This
+    yields \textbf{285 species} (CR\,=\,2, EN\,=\,20, VU\,=\,93,
+    NT\,=\,170).
 
-    \item \textbf{Minimum connectivity.} Species whose observation patches 
-    form fewer than 2 connected components of size $\geq 3$ are excluded, 
-    as the circuit-theory framework requires at least one source--ground 
-    pair.
+    \item \textbf{Minimum connectivity.} During computation,
+    species whose observation patches form fewer than 2 connected
+    components of size $\geq 3$ are excluded, as the
+    circuit-theory framework requires at least one
+    source--ground pair. This removes a further 44 species,
+    leaving 241 species with non-zero current flow.
 \end{enumerate}
 
 \subsubsection{Normalisation and Aggregation}
 \label{sec:aggregation}
 
-Per-species current flow values are normalised to $[0, 1]$ using the 99th 
-percentile as ceiling:
+Per-species current flow values span vastly different scales
+depending on graph structure and population fragmentation. To
+ensure each species contributes on a comparable scale to the
+multi-species aggregation, each species' current vector is
+mean-normalised:
 \begin{equation}
-    \tilde{c}_{v} = \min\!\left( 1,\; 
-        \frac{c_v}{P_{99}(c)} 
-    \right)
+    \tilde{c}_{v} = \frac{c_v}{\bar{c}}
     \label{eq:normalisation}
 \end{equation}
-This percentile-based approach is more robust than max-normalisation, which 
-is sensitive to single extreme pinch-point patches that would compress all 
-other values toward zero.
+where $\bar{c} = \frac{1}{N}\sum_{v} c_v$ is the species-level
+mean current. Values are thus expressed as multiples of the
+species mean: $\tilde{c}_v = 1$ indicates average flow, while
+$\tilde{c}_v \gg 1$ identifies critical pinch-points. This
+allows comparison across species whose absolute current
+magnitudes differ: a species with many observed
+patches generates higher raw current than one with few
+observations, yet both may contain equally important
+bottlenecks. Mean normalisation preserves the relative
+importance of pinch-points within each species while placing
+all species on a common scale. Species whose mean current is
+effectively zero ($\bar{c} < 10^{-12}$) are excluded, leaving
+241 of 285 species with non-zero flow.
 
-Species are weighted by IUCN threat level (CR\,=\,4, EN\,=\,3, VU\,=\,2, 
-NT\,=\,1) to reflect conservation urgency. The multi-species priority surface 
+Species are weighted by national Red List category
+(CR\,=\,4, EN\,=\,3, VU\,=\,2, NT\,=\,1) to reflect
+conservation urgency. The multi-species priority surface
 is then computed as:
 \begin{equation}
     P_v = \frac{1}{2}\left( 
@@ -318,8 +343,9 @@ is then computed as:
     \right)
     \label{eq:priority}
 \end{equation}
-where $w_s$ is the IUCN weight of species $s$, $\hat{y}_{v,s}$ the GNN 
-suitability, and $\tilde{c}_{v,s}$ the normalised current flow at patch $v$.
+where $w_s$ is the threat-category weight of species $s$,
+$\hat{y}_{v,s}$ the GNN suitability, and $\tilde{c}_{v,s}$
+the normalised current flow at patch $v$.
 
 \subsubsection{Protected Area Overlay}
 \label{sec:overlay}

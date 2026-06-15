@@ -4,23 +4,116 @@
 \subsection{Limitations}
 \label{sec:limit-detail}
 
-% Resolution vs computational cost
-% GBIF sampling bias (spatial, temporal, taxonomic)
-% Temporal snapshot — no climate change projection
-% No independent field validation
-% Single-pixel connections: no edge weighting by
-%   corridor width or resistance
-% SOM quantisation loss
+\paragraph{GBIF sampling bias.}
+GBIF occurrence data is subject to strong spatial,
+temporal, and taxonomic biases. Observations cluster near
+roads, trails, and population centres; remote alpine areas
+and private land are systematically under-sampled. The
+model interprets absence from the database as
+pseudo-absence, which conflates true absence with lack of
+sampling effort. While this is standard practice in SDM
+and the overprediction of suitable habitat is a
+desirable fail-safe for conservation, it means predicted
+ranges should not be interpreted as precise distribution
+boundaries without field verification.
 
-\textbf{TODO: Limitations.}
+\paragraph{No independent field validation.}
+Model performance is evaluated against held-out GBIF data,
+which shares the same sampling biases as the training set.
+Independent validation against systematically collected
+field surveys (e.g.\ Info Flora monitoring plots) would
+provide a stronger assessment of predictive accuracy,
+particularly for rare species in under-sampled regions.
+
+\paragraph{Temporal snapshot.}
+All environmental features and occurrence records represent
+a single temporal snapshot (climate normals 1981--2010,
+land cover 2021, GBIF records up to 2024). The model does
+not account for ongoing climate change, land-use
+intensification, or species range shifts. Priority areas
+identified today may lose relevance under future climate
+scenarios.
+
+\paragraph{SOM patch size heterogeneity.}
+The SOM-based discretisation produces patches that are
+adaptive in size, but the adaptation is imperfect. In
+homogeneous high-alpine terrain, patches can grow very
+large ($>$1000 pixels, ${\sim}$0.9\,km$^2$), merging what
+may be ecologically distinct micro-habitats (e.g.\
+snow-bed communities vs.\ wind-exposed ridges). Ideally,
+large alpine patches should be subdivided based on
+additional criteria such as aspect or micro-topography.
+This coarsening reduces spatial precision for alpine
+specialists.
+
+\paragraph{Unweighted edges.}
+The landscape graph uses binary adjacency: patches sharing
+at least one boundary pixel are connected with equal
+weight. This treats a single-pixel corridor under a road
+identically to a broad shared border between two forest
+patches. Edge weighting by shared-boundary length or by a
+resistance surface would better represent functional
+connectivity, particularly for the circuit-theory
+analysis where current should preferentially flow through
+wide corridors.
+
+\paragraph{SOM quantisation loss.}
+Assigning each 30\,m pixel to its best-matching unit and
+then averaging features within patches introduces
+quantisation loss. Fine-scale environmental gradients
+within a patch (e.g.\ a south-facing rock outcrop within
+a north-facing forest patch) are smoothed away. This is
+the trade-off enabling graph-based modelling
+at national scale, but it limits predictions for species
+whose distributions are driven by micro-habitat variation.
+
+\paragraph{Protected-area overlay simplification.}
+The gap analysis treats protection as binary (any pixel
+overlap counts) and does not differentiate management
+effectiveness. A patch overlapping a category-IV landscape
+protection area receives the same ``protected'' label as
+one within a strict nature reserve, though actual
+conservation outcomes may differ substantially.
 
 \subsection{Future Directions}
 \label{sec:future}
 
-% Multi-species GNN (joint embedding)
-% Temporal dynamics / climate scenarios
-% Transfer learning to other regions
-% Edge-weighted graph (resistance surfaces)
-% Lower occurrence threshold for rare species
+\paragraph{Climate scenario projections.}
+Replacing static climate normals with CHELSA future
+projections (SSP scenarios) would enable forecasting of
+range shifts and identification of climate refugia.
+The pipeline architecture supports this directly:
+recomputing patch features under a future climate scenario
+and re-running the trained GNN yields projected
+suitability surfaces without retraining.
 
-\textbf{TODO: Future directions.}
+\paragraph{Edge-weighted graph.}
+Replacing binary adjacency with resistance-based edge
+weights (derived from land-cover permeability or
+shared-boundary length) would improve the ecological
+realism of both the GNN message passing and the
+circuit-theory connectivity analysis.
+
+\paragraph{Multi-species GNN.}
+The current per-species training is computationally
+simple but cannot exploit correlations between species
+with similar habitat requirements. A joint multi-species
+architecture (e.g.\ species embeddings concatenated with
+patch features) could improve predictions for rare species
+by transferring information from ecologically similar
+common species.
+
+\paragraph{Adaptive patch subdivision.}
+Introducing a secondary subdivision step for large
+homogeneous patches (splitting by aspect, elevation
+band, or micro-topographic position) would improve
+spatial precision in alpine terrain without affecting the
+lowland patches that are already well-resolved.
+
+\paragraph{Transfer to other regions.}
+The pipeline is not specific to Switzerland: given
+environmental rasters and occurrence data, the full
+pipeline can be applied to any study area. Transfer to
+neighbouring Alpine countries (Austria, northern Italy)
+or to other taxa (insects, birds) would test the
+generalisability of the approach.

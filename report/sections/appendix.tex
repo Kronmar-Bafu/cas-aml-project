@@ -30,41 +30,30 @@
 \label{app:rf-baseline}
 
 \Cref{tab:rf-summary} summarises the cross-validated performance
-metrics for the Random Forest baseline across all 3\,751 species.
+metrics for the Random Forest baseline across all 2,696 species.
 
 \begin{table}[htbp]
   \centering
   \caption{Random Forest baseline: summary statistics across
-  3\,751 species (5-fold cross-validation, threshold\,=\,0.5).}
+  2,696 species (5-fold cross-validation, threshold\,=\,0.5).}
   \label{tab:rf-summary}
   \begin{tabular}{lrrr}
     \toprule
     Metric & Mean & Median & Std \\
     \midrule
-    AUC       & 0.838 & 0.834 & 0.061 \\
-    Accuracy  & 0.812 & 0.804 & 0.038 \\
-    Precision & 0.715 & 0.713 & 0.110 \\
-    Recall    & 0.395 & 0.369 & 0.175 \\
-    F1        & 0.489 & 0.482 & 0.161 \\
-    MCC       & 0.428 & 0.412 & 0.148 \\
-    TSS       & 0.346 & 0.318 & 0.165 \\
+    AUC       & 0.874 & 0.877 & 0.056 \\
+    Accuracy  & 0.832 & 0.831 & 0.042 \\
+    Precision & 0.733 & 0.754 & 0.151 \\
+    Recall    & 0.481 & 0.486 & 0.185 \\
+    F1        & 0.561 & 0.585 & 0.173 \\
+    MCC       & 0.498 & 0.512 & 0.163 \\
+    TSS       & 0.430 & 0.433 & 0.176 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-The AUC distribution is strongly right-concentrated: 99.4\,\% of
-species achieve AUC\,$>$\,0.7, and 69.5\,\% exceed 0.8. The few
-species below 0.7 are extreme rarities with fewer than 10 presence
-patches, where cross-validation folds contain too few positive
-samples for stable evaluation.
-
-Threshold-dependent metrics tell a different story. Recall averages
-only 0.395 and 71.7\,\% of species have recall below 0.5 at the
-default threshold of 0.5. This reflects the strong class imbalance:
-mean prevalence is ${\sim}$0.6\,\% (980 presence patches out of
-166\,464), so the classifier defaults to predicting absence for
-borderline patches. AUC---which is threshold-independent---is
-therefore the more reliable performance indicator in this setting.
+The AUC distribution is strongly right-concentrated: 99.3\,\% of
+species achieve AUC\,$>$\,0.7, and 91.6\,\% exceed 0.8.
 
 \begin{figure}[htbp]
   \centering
@@ -80,4 +69,44 @@ therefore the more reliable performance indicator in this setting.
   neurons to chase local samples rather than preserving global
   topology.}
   \label{fig:codebook-comparison}
+\end{figure}
+
+\section{GNN-SDM Training Diagnostics}
+\label{app:gnn-training}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{gnn_training_val}
+  \caption{Validation AUC curves during GNN-SDM training for
+  the 12 selected species (6~common, 6~vulnerable). Early
+  stopping restores the model at peak validation AUC. Most
+  species converge within 200--350 epochs; common species with
+  more training data tend to use the full 500-epoch budget.}
+  \label{fig:gnn-val-auc}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.85\linewidth]{gnn_training}
+  \caption{Training and validation loss (weighted MSE) for the
+  12 selected species. The gap between training and validation
+  loss remains small throughout, indicating minimal overfitting.
+  Dropout ($p = 0.2$) and early stopping provide sufficient
+  regularisation.}
+  \label{fig:gnn-train-loss}
+\end{figure}
+
+\section{Per-Species Habitat Suitability Maps}
+\label{app:suitability-maps}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{suitablity_per_species}
+  \caption{GNN-SDM habitat suitability maps for the 12 selected
+  species. Warm colours indicate high predicted suitability.
+  Common species (top two rows) show broader predicted ranges
+  consistent with their generalist niches, while vulnerable
+  species (bottom two rows) display concentrated suitability
+  in restricted habitat patches.}
+  \label{fig:suitability-per-species}
 \end{figure}
